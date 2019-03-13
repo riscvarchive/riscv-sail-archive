@@ -260,7 +260,7 @@ function sealCap(cap, otyp) : (Capability, bits(24)) -> (bool, Capability) =
 function unsealCap(cap) : Capability -> Capability =
     {cap with sealed=false, otype=ones()}
 
-function a_top_correction(a_mid, R, bound) : (bits(3), bits(3), bits(3)) -> bits(65) =
+function a_top_correction(a_mid, R, bound) : (bits(3), bits(3), bits(3)) -> bits(64) =
     match (a_mid <_u R, bound <_u R) {
       (false, false)  => zeros(),
       (false, true)   => zero_extend(0b1),
@@ -270,7 +270,7 @@ function a_top_correction(a_mid, R, bound) : (bits(3), bits(3), bits(3)) -> bits
 
 function getCapBounds(c) : Capability -> (uint64, CapLen) = {
   let E = unsigned(c.E) in
-  let a : bits(65) = zero_extend(c.address) in
+  let a : bits(64) = c.address in
   /* Extract bits we need to make the top correction and calculate representable limit */
   let a3 = truncate(a >> (E + 11), 3) in
   let B3 = truncateLSB(c.B, 3) in
@@ -279,10 +279,15 @@ function getCapBounds(c) : Capability -> (uint64, CapLen) = {
   let correction_base = a_top_correction(a3, R3, B3) in
   let correction_top  = a_top_correction(a3, R3, T3) in
   let a_top = (a >> (E + 14)) in
-  let e_zeros = zeros(E) in
-  let base : bits(64) = truncate((a_top + correction_base) @ c.B @ e_zeros, 64) in
-  let top  : bits(65) = truncate((a_top + correction_top)  @ c.T @ e_zeros, 65) in
-  (unsigned(base), unsigned(top))
+  let e_zeros = zeros(E) in {
+    base : bits(65) = truncate((a_top + correction_base) @ c.B @ e_zeros, 65);
+    top  : bits(65) = truncate((a_top + correction_top)  @ c.T @ e_zeros, 65);
+    if (base[64] == bitone) then /* temporary hack to fix wraparound edge cases */
+      top[64..64] = 0b0
+    else if (top <_u base) then
+      top[64..64] = 0b1;
+    (unsigned(base[63..0]), unsigned(top))
+  }
 }
 
 function getCapBase(c) : Capability -> uint64 =
