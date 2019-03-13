@@ -282,10 +282,10 @@ function getCapBounds(c) : Capability -> (uint64, CapLen) = {
   let e_zeros = zeros(E) in {
     base : bits(65) = truncate((a_top + correction_base) @ c.B @ e_zeros, 65);
     top  : bits(65) = truncate((a_top + correction_top)  @ c.T @ e_zeros, 65);
-    if (base[64] == bitone) then /* temporary hack to fix wraparound edge cases */
-      top[64..64] = 0b0
-    else if (top <_u base) then
-      top[64..64] = 0b1;
+    if (top <_u base) then  /* temporary hack to fix wraparound edge cases */
+      top[64..64] = 0b1
+    else if (base[64] == bitone) then
+      top[64..64] = 0b0;
     (unsigned(base[63..0]), unsigned(top))
   }
 }
