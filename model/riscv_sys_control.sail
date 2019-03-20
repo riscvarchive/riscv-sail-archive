@@ -233,11 +233,6 @@ function dispatchInterrupt(priv : Privilege) -> option((InterruptType, Privilege
 
 /* privilege transitions due to exceptions and interrupts */
 
-struct cheri_cause = {
-  cap_idx : bits(6),
-  capEx   : CapEx
-}
-
 struct sync_exception = {
   trap    : ExceptionType,
   excinfo : option(xlenbits),
@@ -481,11 +476,4 @@ function init_sys() -> unit = {
   
   // log compatibility with spike
   print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()) ^ " (input: " ^ BitStr(EXTZ(0b0) : xlenbits) ^ ")")
-}
-
-/* memory access exceptions, defined here for use by the platform model. */
-
-union MemoryOpResult ('a : Type) = {
-  MemValue     : 'a,
-  MemException : ExceptionType
 }

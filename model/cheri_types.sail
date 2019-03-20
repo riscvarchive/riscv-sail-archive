@@ -135,3 +135,10 @@ function string_of_capex (ex) : CapEx -> string =
     CapEx_PermitUnsealViolation         => "PermitUnsealViolation"       ,
     CapEx_PermitSetCIDViolation         => "PermitSetCIDViolation"
   }
+
+struct cheri_cause = {
+  cap_idx : bits(6),
+  capEx   : CapEx
+}
+
+function checkCP2usable () : unit -> unit = ()

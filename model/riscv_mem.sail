@@ -17,12 +17,7 @@ function phys_mem_read forall 'n, 'n >= 0. (t : ReadType, addr : xlenbits, width
   }
 
 function checked_mem_read forall 'n, 'n > 0. (t : ReadType, addr : xlenbits, width : atom('n), aq : bool, rl : bool, res: bool) -> MemoryOpResult(bits(8 * 'n)) =
-  /* treat MMIO regions as not executable for now. TODO: this should actually come from PMP/PMA. */
-  if   t == Data & within_mmio_readable(addr, width)
-  then mmio_read(addr, width)
-  else if within_phys_mem(addr, width)
-  then phys_mem_read(t, addr, width, aq, rl, res)
-  else MemException(E_Load_Access_Fault)
+  phys_mem_read(t, addr, width, aq, rl, res)
 
 /* Atomic accesses can be done to MMIO regions, e.g. in kernel access to device registers. */
 
@@ -166,11 +161,7 @@ function phys_mem_write forall 'n, 'n <= 'cap_size . (addr : xlenbits, width : a
 
 // dispatches to MMIO regions or physical memory regions depending on physical memory map
 function checked_mem_write forall 'n, 'n > 0 & 'n <= 'cap_size . (addr : xlenbits, width : atom('n), tag : bool, data: bits(8 * 'n)) -> MemoryOpResult(bool) =
-  if   within_mmio_writable(addr, width)
-  then mmio_write(addr, width, data)
-  else if within_phys_mem(addr, width)
-  then phys_mem_write(addr, width, tag, data)
-  else MemException(E_SAMO_Access_Fault)
+  phys_mem_write(addr, width, tag, data)
 
 /* Atomic accesses can be done to MMIO regions, e.g. in kernel access to device registers. */
 
