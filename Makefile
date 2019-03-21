@@ -255,5 +255,6 @@ clean:
 	-rm -f c_emulator/riscv_sim c_emulator/riscv_rvfi
 	-rm -rf ocaml_emulator/_sbuild ocaml_emulator/_build ocaml_emulator/riscv_ocaml_sim ocaml_emulator/tracecmp
 	-rm -f *.gcno *.gcda
+	-rm -f z3_problems
 	-Holmake cleanAll
 	ocamlbuild -clean
