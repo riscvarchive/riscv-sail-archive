@@ -15,7 +15,7 @@ SAIL_OTHER_RVFI_SRCS = prelude.sail rvfi_dii.sail $(SAIL_CHERI_TYPES) riscv_type
 SAIL_SRCS      = $(addprefix model/,$(SAIL_OTHER_SRCS) $(SAIL_SEQ_INST_SRCS)  riscv_step.sail)
 SAIL_RMEM_SRCS = $(addprefix model/,$(SAIL_OTHER_SRCS) $(SAIL_RMEM_INST_SRCS) riscv_step.sail riscv_analysis.sail)
 SAIL_RVFI_SRCS = $(addprefix model/,$(SAIL_OTHER_RVFI_SRCS) $(SAIL_SEQ_INST_SRCS)  riscv_step.sail riscv_analysis.sail)
-SAIL_COQ_SRCS  = $(addprefix model/,$(SAIL_OTHER_SRCS) $(SAIL_SEQ_INST_SRCS)  riscv_termination.sail riscv_analysis.sail)
+SAIL_COQ_SRCS  = $(addprefix model/,$(SAIL_OTHER_SRCS) $(SAIL_SEQ_INST_SRCS)  riscv_termination.sail)
 
 PLATFORM_OCAML_SRCS = $(addprefix ocaml_emulator/,platform.ml platform_impl.ml riscv_ocaml_sim.ml)
 

@@ -736,8 +736,6 @@ val vector_concat = {ocaml: "append", lem: "append_list"} : forall ('n : Int) ('
 
 overload append = {bitvector_concat, vector_concat}
 
-val not_vec = {c: "not_bits", _: "not_vec"} : forall 'n. bits('n) -> bits('n)
-
 overload ~ = {not_bool, not_vec}
 
 val neq_vec = {lem: "neq"} : forall 'n. (bits('n), bits('n)) -> bool
@@ -749,14 +747,6 @@ val neq_anything = {lem: "neq", coq: "generic_neq"} : forall ('a : Type). ('a, '
 function neq_anything (x, y) = not_bool(x == y)
 
 overload operator != = {neq_vec, neq_anything}
-
-val and_vec = {lem: "and_vec", c: "and_bits", coq: "and_vec", ocaml: "and_vec"} : forall 'n. (bits('n), bits('n)) -> bits('n)
-
-overload operator & = {and_vec}
-
-val or_vec = {lem: "or_vec", c: "or_bits", coq: "or_vec", ocaml: "or_vec"} : forall 'n. (bits('n), bits('n)) -> bits('n)
-
-overload operator | = {or_vec}
 
 val unsigned = {ocaml: "uint", lem: "uint", coq: "uint", c: "sail_unsigned"} : forall 'n. bits('n) -> range(0, 2 ^ 'n - 1)
 
@@ -897,10 +887,6 @@ overload operator / = {quotient_nat, quotient, quotient_real}
 
 val quot_round_zero = {ocaml: "quot_round_zero", lem: "hardware_quot", c: "tdiv_int"} : (int, int) -> int
 val rem_round_zero = {ocaml: "rem_round_zero", lem: "hardware_mod", c: "tmod_int"} : (int, int) -> int
-
-val modulus = {ocaml: "modulus", lem: "hardware_mod", c: "tmod_int"} : (int, int) -> int
-
-overload operator % = {modulus}
 
 val Real = {ocaml: "Num.num_of_big_int", lem: "realFromInteger"} : int -> real
 
@@ -1054,8 +1040,8 @@ function bit_to_bool b = match b {
 infix 7 >>
 infix 7 <<
 
-val "shift_bits_right" : forall 'n 'm. (bits('n), bits('m)) -> bits('n) effect {undef}
-val "shift_bits_left" : forall 'n 'm. (bits('n), bits('m)) -> bits('n) effect {undef}
+val "shift_bits_right" : forall 'n 'm. (bits('n), bits('m)) -> bits('n)
+val "shift_bits_left" : forall 'n 'm. (bits('n), bits('m)) -> bits('n)
 
 val "shiftl" : forall 'm 'n, 'n >= 0. (bits('m), atom('n)) -> bits('m)
 val "shiftr" : forall 'm 'n, 'n >= 0. (bits('m), atom('n)) -> bits('m)

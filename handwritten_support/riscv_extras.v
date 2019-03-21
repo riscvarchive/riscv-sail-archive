@@ -52,8 +52,15 @@ Definition get_slice_int len n lo := of_bools (get_slice_int_bl len n lo)
 Definition write_ram {rv e} m size (hexRAM : mword m) (addr : mword m) (data : mword (8 * size)) : monad rv bool e :=
   write_mem_val data.
 
+Definition write_tag_bool {rv a e} (addr : mword a) (b : bool) : monad rv unit e :=
+  write_tag addr (bitU_of_bool b) >>= fun _ => returnm tt.
+
 Definition read_ram {rv e} m size `{ArithFact (size >= 0)} (_ : mword m) (addr : mword m) : monad rv (mword (8 * size)) e :=
  read_mem Read_plain addr size.
+
+Definition read_tag_bool {rv a e} (addr : mword a) : monad rv bool e :=
+  read_tag addr >>= bool_of_bitU_fail.
+
 (*
 Definition string_of_bits bs := string_of_bv (bits_of bs).
 Definition string_of_int := show
@@ -143,3 +150,15 @@ exists w__0.
 omega.
 Qed.
 Hint Resolve n_leading_spaces_fact : sail.
+
+Lemma getCapOffset_lemma {x0 x1 x2 x : Z} :
+ 0 <= x0 <= 18446744073709551616 - 1 ->
+ 0 <= x1 <= 18446744073709551616 - 1 ->
+ 18446744073709551616 <= x2 <= 18446744073709551616 ->
+ x = ZEuclid.modulo (x0 - x1) x2 ->
+ 0 <= x <= 18446744073709551616 - 1.
+intros.
+match goal with H:context [ZEuclid.modulo ?X ?Y] |- _ => pose proof (ZEuclid.mod_always_pos X Y) end.
+omega with Z.
+Qed.
+Hint Resolve getCapOffset_lemma : sail.

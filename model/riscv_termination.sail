@@ -1,4 +1,5 @@
 termination_measure n_leading_spaces s = string_length(s)
+/*
 termination_measure walk39(_,_,_,_,_,_,level,_) = level
 val compressed_measure : ast -> int
 function compressed_measure(instr) =
@@ -38,3 +39,4 @@ function compressed_measure(instr) =
     _ => 0
   }
 termination_measure execute(i) = compressed_measure(i)
+*/
