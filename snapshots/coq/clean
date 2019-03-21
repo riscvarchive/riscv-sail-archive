@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ ! -e sail/_CoqProject ]; then
+  echo Run clean from the coq directory
+  exit 1
+fi
+
+set -ex 
+rm -f *.{vo,glob} .*.aux
+cd sail
+make clean
