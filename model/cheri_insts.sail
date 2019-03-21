@@ -65,12 +65,6 @@ function raise_c2_exception_pcc(capEx) =
 val pcc_access_system_regs : unit -> bool effect {rreg}
 function pcc_access_system_regs () = PCC.access_system_regs
 
-val execute_branch_pcc : Capability -> unit effect {wreg}
-function execute_branch_pcc(newPCC) = {
-  nextPC = newPCC.address;
-  nextPCC = newPCC;
-}
-
 /* Operations that extract parts of a capability into GPR */
 
 union clause ast = CGetPerm   : (regbits, regbits)
@@ -787,7 +781,9 @@ function clause execute (CCall(cs, cb, 0b00001)) = /* selector=1 */
   checkCP2usable();
   let cs_val = readCapReg(cs);
   let cb_val = readCapReg(cb);
-  let cs_cursor = getCapCursor(cs_val);
+  let newPC = [cs_val.address with 0 = bitzero]; /* clear bit zero as for RISCV JALR */
+  let newPC_int = unsigned(newPC);
+  let (cs_base, cs_top) = getCapBounds(cs_val);
   if not (cs_val.tag) then
     raise_c2_exception(CapEx_TagViolation, cs)
   else if not (cb_val.tag) then
@@ -806,15 +802,16 @@ function clause execute (CCall(cs, cb, 0b00001)) = /* selector=1 */
     raise_c2_exception(CapEx_PermitExecuteViolation, cs)
   else if cb_val.permit_execute then
     raise_c2_exception(CapEx_PermitExecuteViolation, cb)
-  else if cs_cursor < getCapBase(cs_val) then
+  else if newPC_int < cs_base then
     raise_c2_exception(CapEx_LengthViolation, cs)
-  else if cs_cursor >= getCapTop(cs_val) then
+  else if (newPC_int + min_inst_bytes) > cs_top then
     raise_c2_exception(CapEx_LengthViolation, cs)
-  else
-  {
-    
+  else if newPC[1] & ~(haveRVC()) then {
+    handle_mem_exception(newPC,  E_Fetch_Addr_Align);
+    false
+  } else {
     C26 = unsealCap(cb_val);
-    nextPC = cs_val.address;
+    nextPC = newPC;
     nextPCC = unsealCap(cs_val);
     true
   }
@@ -831,27 +828,28 @@ function clause execute(CJALR(cd, cb)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let cb_ptr = getCapCursor(cb_val);
-  let cb_top = getCapTop(cb_val);
-  let cb_base= getCapBase(cb_val);
+  let newPC = [cb_val.address with 0 = bitzero]; /* clear bit zero as for RISCV JALR */
+  let newPC_int = unsigned(newPC);
+  let (cb_base, cb_top)  = getCapBounds(cb_val);
   if not (cb_val.tag) then
     raise_c2_exception(CapEx_TagViolation, cb)
   else if (cb_val.sealed) then
     raise_c2_exception(CapEx_SealViolation, cb)
   else if not (cb_val.permit_execute) then
     raise_c2_exception(CapEx_PermitExecuteViolation, cb)
-  else if cb_ptr < cb_base then
+  else if newPC_int < cb_base then
     raise_c2_exception(CapEx_LengthViolation, cb)
-  else if (cb_ptr + min_inst_bytes) > cb_top then
+  else if (newPC_int + min_inst_bytes) > cb_top then
     raise_c2_exception(CapEx_LengthViolation, cb)
-  else if (cb_ptr % min_inst_bytes) != 0 then {
-    handle_mem_exception(to_bits(xlen, cb_ptr),  E_Fetch_Addr_Align);
+  else if newPC[1] & ~(haveRVC()) then {
+    handle_mem_exception(newPC,  E_Fetch_Addr_Align);
     false
   } else {
     let (success, linkCap) = setCapAddr(PCC, nextPC); /* Note that nextPC accounts for compressed instrucitons */
     assert(success, "Link cap should always be representable.");
     writeCapReg(cd, linkCap);
-    execute_branch_pcc(cb_val);
+    nextPC  = newPC;
+    nextPCC = cb_val;
     true
   };
 }
