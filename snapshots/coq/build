@@ -1,6 +1,9 @@
 #!/bin/bash
 
 BBV_DIR=${BBV_DIR:-../bbv}
+# Canonicalise path so that it works in the sail subdirectory
+BBV_DIR=$(cd "$BBV_DIR"; pwd -L)
+export BBV_DIR
 
 if [ ! -d $BBV_DIR ]; then
   echo 'Check out a copy of https://github.com/mit-plv/bbv in the parent directory and build it.'
@@ -8,9 +11,7 @@ if [ ! -d $BBV_DIR ]; then
 fi
 
 set -ex
-cd sail
-make
-cd ..
+make -C sail
 coqc -R $BBV_DIR/theories bbv -R sail Sail riscv_extras.v
 coqc -R $BBV_DIR/theories bbv -R sail Sail riscv_types.v
 coqc -R $BBV_DIR/theories bbv -R sail Sail riscv.v
