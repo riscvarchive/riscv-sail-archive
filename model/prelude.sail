@@ -887,20 +887,15 @@ val abs_real = {ocaml: "abs_real", lem: "abs"} : real -> real
 
 overload abs = {abs_int, abs_real}
 
-val quotient_nat = {ocaml: "quotient", lem: "integerDiv"} : (nat, nat) -> nat
 
 val quotient_real = {ocaml: "quotient_real", lem: "realDiv"} : (real, real) -> real
 
-val quotient = {ocaml: "quotient", lem: "integerDiv"} : (int, int) -> int
-
-overload operator / = {quotient_nat, quotient, quotient_real}
+overload operator / = {ediv_int, div, quotient_real}
 
 val quot_round_zero = {ocaml: "quot_round_zero", lem: "hardware_quot", c: "tdiv_int"} : (int, int) -> int
 val rem_round_zero = {ocaml: "rem_round_zero", lem: "hardware_mod", c: "tmod_int"} : (int, int) -> int
 
-val modulus = {ocaml: "modulus", lem: "hardware_mod", c: "tmod_int"} : (int, int) -> int
-
-overload operator % = {modulus}
+overload operator % = {emod_int, mod}
 
 val Real = {ocaml: "Num.num_of_big_int", lem: "realFromInteger"} : int -> real
 
@@ -1115,9 +1110,6 @@ overload ones = {ones_implicit, ones_n}
 
 $endif
 
-val modulus = {ocaml: "modulus", lem: "hardware_mod", coq: "euclid_modulo", _ : "tmod_int"} : forall 'n, 'n > 0 .  (int, atom('n)) -> range(0, 'n - 1)
-
-overload operator % = {modulus}
 overload sign_extend = {EXTS, sail_sign_extend}
 overload zero_extend = {EXTZ, sail_zero_extend}
 
