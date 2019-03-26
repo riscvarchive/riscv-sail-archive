@@ -305,7 +305,7 @@ function clause execute (CIncOffset(cd, cb, rt)) =
   checkCP2usable();
   let cb_val = readCapReg(cb);
   let rt_val = rGPR(rt);
-  if cb_val.tag & cb_val.sealed & (rt_val != 0x0000000000000000) then
+  if cb_val.tag & cb_val.sealed then
     raise_c2_exception(CapEx_SealViolation, cb)
   else
   {
