@@ -38,7 +38,7 @@ endif
 
 # Non-instruction sources
 PRELUDE = prelude.sail prelude_mapping.sail $(SAIL_XLEN) prelude_mem.sail
-SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
+SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail riscv_regs.sail $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
 SAIL_ARCH_RVFI_SRCS = $(PRELUDE) rvfi_dii.sail riscv_types.sail $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
 
 # Control inclusion of 64-bit only riscv_analysis
