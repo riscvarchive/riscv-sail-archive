@@ -8,45 +8,45 @@ register instbits : xlenbits
 
 /* register file and accessors */
 
-register Xs : vector(32, dec, xlenbits)
+register Xs : vector(32, dec, regtype)
 
-register x1  : xlenbits
-register x2  : xlenbits
-register x3  : xlenbits
-register x4  : xlenbits
-register x5  : xlenbits
-register x6  : xlenbits
-register x7  : xlenbits
-register x8  : xlenbits
-register x9  : xlenbits
-register x10 : xlenbits
-register x11 : xlenbits
-register x12 : xlenbits
-register x13 : xlenbits
-register x14 : xlenbits
-register x15 : xlenbits
-register x16 : xlenbits
-register x17 : xlenbits
-register x18 : xlenbits
-register x19 : xlenbits
-register x20 : xlenbits
-register x21 : xlenbits
-register x22 : xlenbits
-register x23 : xlenbits
-register x24 : xlenbits
-register x25 : xlenbits
-register x26 : xlenbits
-register x27 : xlenbits
-register x28 : xlenbits
-register x29 : xlenbits
-register x30 : xlenbits
-register x31 : xlenbits
+register x1  : regtype
+register x2  : regtype
+register x3  : regtype
+register x4  : regtype
+register x5  : regtype
+register x6  : regtype
+register x7  : regtype
+register x8  : regtype
+register x9  : regtype
+register x10 : regtype
+register x11 : regtype
+register x12 : regtype
+register x13 : regtype
+register x14 : regtype
+register x15 : regtype
+register x16 : regtype
+register x17 : regtype
+register x18 : regtype
+register x19 : regtype
+register x20 : regtype
+register x21 : regtype
+register x22 : regtype
+register x23 : regtype
+register x24 : regtype
+register x25 : regtype
+register x26 : regtype
+register x27 : regtype
+register x28 : regtype
+register x29 : regtype
+register x30 : regtype
+register x31 : regtype
 
-val rX : forall 'n, 0 <= 'n < 32. regno('n) -> xlenbits effect {rreg}
+val rX : forall 'n, 0 <= 'n < 32. regno('n) -> regtype effect {rreg}
 /*function rX 0 = 0x0000000000000000
 and rX (r if r > 0) = Xs[r]*/
 function rX r = match r {
-  0 => EXTZ(0x0),
+  0 => zero_reg,
   1 => x1,
   2 => x2,
   3 => x3,
@@ -81,17 +81,17 @@ function rX r = match r {
 }
 
 $ifdef RVFI_DII
-val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit effect {wreg}
+val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit effect {wreg}
 function rvfi_wX (r,v) = {
   rvfi_exec->rvfi_rd_wdata() = v;
   rvfi_exec->rvfi_rd_addr() = to_bits(8,r);
 }
 $else
-val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit
+val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit
 function rvfi_wX (r,v) = ()
 $endif
 
-val wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit effect {wreg}
+val wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit effect {wreg, escape}
 function wX (r, v) = {
   match r {
     0 => (),
@@ -130,7 +130,7 @@ function wX (r, v) = {
   if (r != 0) then {
      rvfi_wX(r,v);
      // Xs[r] = v;
-     print_reg("x" ^ string_of_int(r) ^ " <- " ^ BitStr(v));
+     print_reg("x" ^ string_of_int(r) ^ " <- " ^ RegStr(v));
   }
 }
 

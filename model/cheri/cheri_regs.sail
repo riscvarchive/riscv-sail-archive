@@ -36,7 +36,7 @@ function translateDDC (addr, at, width) = {
     ReadWrite  => ddc.permit_store,
     Execute    => false /* DDC should only be for load/store */
   };
-  let newAddr = (getCapCursor(ddc) + unsigned(addr)) % pow2(xlen);
+  let newAddr = (getCapCursor(ddc) + unsigned(addr)) % pow2(sizeof(xlen));
   let size  = word_width_bytes(width);
   let (base, top) = getCapBounds(ddc);
 

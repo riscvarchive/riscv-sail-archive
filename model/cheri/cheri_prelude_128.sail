@@ -226,7 +226,7 @@ function memBitsToCapability(tag, b) : (bool, bits(128)) -> Capability =
   capBitsToCapability(tag, b ^ null_cap_bits)
 
 function getCapPerms(cap) : Capability -> bits(31) =
-    let perms : bits(15) = zero_extend(getCapHardPerms(cap)) in
+    let perms : bits(15) = EXTZ(getCapHardPerms(cap)) in
     (0x000 /* uperms 30-19 */
   @ cap.uperms
   @ perms)
@@ -425,7 +425,7 @@ function setCapBounds(cap, base, top) : (Capability, bits(64), bits(65)) -> (boo
     /* Find out whether we have lost significant bits of base and top using a
      * mask of bits that we will lose (including 3 extra for exp).
      */
-    maskLo : bits(65) = zero_extend(replicate_bits(0b1, e + 3));
+    maskLo : bits(65) = EXTZ(replicate_bits(0b1, e + 3));
     z65    : bits(65) = zeros();
     lostSignificantBase = (base65 & maskLo) != z65;
     lostSignificantTop = (top & maskLo) != z65;
@@ -465,7 +465,7 @@ function capToString (cap) = {
   let len = getCapLength(cap);
   let len_str = BitStr(to_bits(68, len));
   /* Print architectural type which is -1 for unsealed caps */
-  let otype64 : bits(64) = if cap.sealed then zero_extend(cap.otype) else ones();
+  let otype64 : bits(64) = if cap.sealed then EXTZ(cap.otype) else ones();
   concat_str(" t:",
   concat_str(if cap.tag then "1" else "0",
   concat_str(" s:",

@@ -323,3 +323,11 @@ mapping size_mnemonic : word_width <-> string = {
   WORD   <-> "w",
   DOUBLE <-> "d"
 }
+
+val word_width_bytes : word_width -> {'s, 's == 1 | 's == 2 | 's == 4 | 's == 8 . atom('s)}
+function word_width_bytes width = match width {
+  BYTE   => 1,
+  HALF   => 2,
+  WORD   => 4,
+  DOUBLE => 8
+}

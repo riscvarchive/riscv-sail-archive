@@ -112,15 +112,40 @@ val print_platform = {ocaml: "Platform.print_platform", c: "print_platform", _: 
 $ifndef FEATURE_IMPLICITS
 val EXTS : forall 'n 'm , 'm >= 'n . bits('n) -> bits('m)
 val EXTZ : forall 'n 'm , 'm >= 'n . bits('n) -> bits('m)
-
 function EXTS v = sail_sign_extend(v, sizeof('m))
 function EXTZ v = sail_zero_extend(v, sizeof('m))
+
+val zeros_implicit : forall 'n, 'n >= 0 . unit -> bits('n)
+function zeros_implicit () = sail_zeros('n)
+overload zeros = {zeros_implicit, sail_zeros}
+
+val ones_n : forall 'n, 'n >= 0 . int('n) -> bits('n)
+function ones_n n = replicate_bits (0b1, n)
+
+val ones_implicit : forall 'n, 'n >= 0 . unit -> bits('n)
+function ones_implicit () = ones_n ('n)
+
+overload ones = {ones_implicit, ones_n}
+
 $else
 val EXTS : forall 'n 'm, 'm >= 'n. (implicit('m), bits('n)) -> bits('m)
 val EXTZ : forall 'n 'm, 'm >= 'n. (implicit('m), bits('n)) -> bits('m)
 
 function EXTS(m, v) = sail_sign_extend(v, m)
 function EXTZ(m, v) = sail_zero_extend(v, m)
+
+val zeros_implicit : forall 'n, 'n >= 0 . implicit('n) -> bits('n)
+function zeros_implicit (n) = sail_zeros(n)
+overload zeros = {zeros_implicit, sail_zeros}
+
+val ones_n : forall 'n, 'n >= 0 . int('n) -> bits('n)
+function ones_n n = replicate_bits (0b1, n)
+
+val ones_implicit : forall 'n, 'n >= 0 . implicit('n) -> bits('n)
+function ones_implicit (n) = ones_n (n)
+
+overload ones = {ones_implicit, ones_n}
+
 $endif
 
 val cast bool_to_bits : bool -> bits(1)
