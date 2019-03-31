@@ -54,7 +54,7 @@ FPRegs
 let MAX_U64=MAX(64)
 
 enum CapEx = {
-  CapEx_None, 
+  CapEx_None,
   CapEx_LengthViolation,
   CapEx_TagViolation,
   CapEx_SealViolation,
@@ -108,7 +108,7 @@ function CapExCode(ex) : CapEx -> bits(5)=
     CapEx_PermitSetCIDViolation         => 0b11100
   }
 
-function string_of_capex (ex) : CapEx -> string = 
+function string_of_capex (ex) : CapEx -> string =
   match ex {
     CapEx_None                          => "None"                        ,
     CapEx_LengthViolation               => "LengthViolation"             ,
@@ -135,3 +135,8 @@ function string_of_capex (ex) : CapEx -> string =
     CapEx_PermitUnsealViolation         => "PermitUnsealViolation"       ,
     CapEx_PermitSetCIDViolation         => "PermitSetCIDViolation"
   }
+
+struct cheri_cause = {
+  cap_idx : bits(6),
+  capEx   : CapEx
+}
