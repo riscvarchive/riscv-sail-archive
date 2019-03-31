@@ -42,68 +42,73 @@ register x29 : regtype
 register x30 : regtype
 register x31 : regtype
 
-val rX : forall 'n, 0 <= 'n < 32. regno('n) -> regtype effect {rreg}
+val rX : forall 'n, 0 <= 'n < 32. regno('n) -> xlenbits effect {rreg}
 /*function rX 0 = 0x0000000000000000
 and rX (r if r > 0) = Xs[r]*/
-function rX r = match r {
-  0 => zero_reg,
-  1 => x1,
-  2 => x2,
-  3 => x3,
-  4 => x4,
-  5 => x5,
-  6 => x6,
-  7 => x7,
-  8 => x8,
-  9 => x9,
-  10 => x10,
-  11 => x11,
-  12 => x12,
-  13 => x13,
-  14 => x14,
-  15 => x15,
-  16 => x16,
-  17 => x17,
-  18 => x18,
-  19 => x19,
-  20 => x20,
-  21 => x21,
-  22 => x22,
-  23 => x23,
-  24 => x24,
-  25 => x25,
-  26 => x26,
-  27 => x27,
-  28 => x28,
-  29 => x29,
-  30 => x30,
-  31 => x31
+function rX r = {
+  let v : regtype =
+    match r {
+      0 => zero_reg,
+      1 => x1,
+      2 => x2,
+      3 => x3,
+      4 => x4,
+      5 => x5,
+      6 => x6,
+      7 => x7,
+      8 => x8,
+      9 => x9,
+      10 => x10,
+      11 => x11,
+      12 => x12,
+      13 => x13,
+      14 => x14,
+      15 => x15,
+      16 => x16,
+      17 => x17,
+      18 => x18,
+      19 => x19,
+      20 => x20,
+      21 => x21,
+      22 => x22,
+      23 => x23,
+      24 => x24,
+      25 => x25,
+      26 => x26,
+      27 => x27,
+      28 => x28,
+      29 => x29,
+      30 => x30,
+      31 => x31
+    };
+  regval_from_reg(v)
 }
 
 $ifdef RVFI_DII
-val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit effect {wreg}
+val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit effect {wreg}
 function rvfi_wX (r,v) = {
   rvfi_exec->rvfi_rd_wdata() = v;
   rvfi_exec->rvfi_rd_addr() = to_bits(8,r);
 }
 $else
-val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit
+val rvfi_wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit
 function rvfi_wX (r,v) = ()
 $endif
 
-val wX : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit effect {wreg, escape}
-function wX (r, v) = {
+val wX : forall 'n, 0 <= 'n < 32. (regno('n), xlenbits) -> unit effect {wreg, escape}
+function wX (r, in_v) = {
+  let v = regval_into_reg(in_v);
   match r {
-    0 => (),
-    1 => x1 = v,
-    2 => x2 = v,
-    3 => x3 = v,
-    4 => x4 = v,
-    5 => x5 = v,
-    6 => x6 = v,
-    7 => x7 = v,
-    8 => x8 = v,
-    9 => x9 = v,
+    0  => (),
+    1  => x1 = v,
+    2  => x2 = v,
+    3  => x3 = v,
+    4  => x4 = v,
+    5  => x5 = v,
+    6  => x6 = v,
+    7  => x7 = v,
+    8  => x8 = v,
+    9  => x9 = v,
     10 => x10 = v,
     11 => x11 = v,
     12 => x12 = v,
@@ -128,7 +133,7 @@ function wX (r, v) = {
     31 => x31 = v
   };
   if (r != 0) then {
-     rvfi_wX(r,v);
+     rvfi_wX(r,in_v);
      // Xs[r] = v;
      print_reg("x" ^ string_of_int(r) ^ " <- " ^ RegStr(v));
   }
