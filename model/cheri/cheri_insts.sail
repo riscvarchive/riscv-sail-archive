@@ -40,9 +40,9 @@ function raise_c2_exception6(capEx, regnum) =
         capEx   = capEx
     };
     let t : sync_exception = struct {
-      trap = E_CHERI,
+      trap    = E_CHERI,
       excinfo = (None() : option(xlenbits)),
-      ccause = Some(cause)
+      ext     = Some(cause)
     };
     nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC);
     false

@@ -625,7 +625,8 @@ function clause execute ECALL() = {
                       Supervisor => E_S_EnvCall,
                       Machine    => E_M_EnvCall
                     },
-             excinfo = (None() : option(xlenbits)) };
+             excinfo = (None() : option(xlenbits)),
+             ext     = None() };
   nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC);
   false
 }

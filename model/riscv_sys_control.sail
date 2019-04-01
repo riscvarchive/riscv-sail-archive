@@ -246,18 +246,12 @@ function dispatchInterrupt(priv : Privilege) -> option((InterruptType, Privilege
   }
 }
 
-/* privilege transitions due to exceptions and interrupts */
+/* model context for synchronous exceptions, parameterized for extensions */
 
 struct sync_exception = {
   trap    : ExceptionType,
-  excinfo : option(xlenbits)
-}
-
-function tval(excinfo : option(xlenbits)) -> xlenbits = {
-  match (excinfo) {
-    Some(e) => e,
-    None()  => EXTZ(0b0)
-  }
+  excinfo : option(xlenbits),
+  ext     : option(ext_exception)   /* for extensions */
 }
 
 union ctl_result = {
@@ -265,6 +259,15 @@ union ctl_result = {
   CTL_SRET : unit,
   CTL_MRET : unit,
   CTL_URET : unit
+}
+
+/* trap value */
+
+function tval(excinfo : option(xlenbits)) -> xlenbits = {
+  match (excinfo) {
+    Some(e) => e,
+    None()  => EXTZ(0b0)
+  }
 }
 
 $ifdef RVFI_DII
@@ -278,7 +281,7 @@ $endif
 
 /* handle exceptional ctl flow by updating nextPC and operating privilege */
 
-function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenbits, info : option(xlenbits))
+function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenbits, info : option(xlenbits), ext : option(ext_exception))
                     -> xlenbits = {
   rvfi_trap();
   print_platform("handling " ^ (if intr then "int#" else "exc#")
@@ -298,6 +301,8 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
        mepc            = pc;
 
        cur_privilege   = del_priv;
+
+       handle_trap_extension(del_priv, pc, ext);
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
@@ -324,6 +329,8 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        cur_privilege   = del_priv;
 
+       handle_trap_extension(del_priv, pc, ext);
+
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
        match tvec_addr(stvec, scause) {
@@ -345,6 +352,8 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        cur_privilege   = del_priv;
 
+       handle_trap_extension(del_priv, pc, ext);
+
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
        match tvec_addr(utvec, ucause) {
@@ -362,7 +371,7 @@ function handle_exception(cur_priv : Privilege, ctl : ctl_result,
       let del_priv = exception_delegatee(e.trap, cur_priv);
       print_platform("trapping from " ^ cur_priv ^ " to " ^ del_priv
                      ^ " to handle " ^ e.trap);
-      handle_trap(del_priv, false, e.trap, pc, e.excinfo)
+      handle_trap(del_priv, false, e.trap, pc, e.excinfo, e.ext)
     },
     (_, CTL_MRET())  => {
       let prev_priv   = cur_privilege;
@@ -408,12 +417,13 @@ function handle_exception(cur_priv : Privilege, ctl : ctl_result,
 
 function handle_mem_exception(addr : xlenbits, e : ExceptionType) -> unit = {
   let t : sync_exception = struct { trap    = e,
-                                    excinfo = Some(addr) } in
+                                    excinfo = Some(addr),
+                                    ext     = None() } in
   nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC)
 }
 
 function handle_interrupt(i : InterruptType, del_priv : Privilege) -> unit =
-  nextPC = handle_trap(del_priv, true, i, PC, None())
+  nextPC = handle_trap(del_priv, true, i, PC, None(), None())
 
 /* state state initialization */
 

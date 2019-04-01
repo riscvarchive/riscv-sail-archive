@@ -163,7 +163,7 @@ enum ExceptionType = {
  E_Reserved_14,
  E_SAMO_Page_Fault,
 
-/* extensions */
+ /* extensions */
  E_CHERI
 }
 

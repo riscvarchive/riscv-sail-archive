@@ -331,7 +331,8 @@ function handle_illegal() -> unit = {
              then Some(instbits)
              else None();
   let t : sync_exception = struct { trap    = E_Illegal_Instr,
-                                    excinfo = info };
+                                    excinfo = info,
+                                    ext     = None() };
   nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC)
 }
 
