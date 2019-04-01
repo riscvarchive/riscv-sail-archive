@@ -30,7 +30,8 @@ endif
 PRELUDE = prelude.sail prelude_mapping.sail $(SAIL_XLEN) prelude_mem.sail
 PRELUDE += cheri/cheri_prelude.sail cheri/cheri_types.sail cheri/cheri_prelude_128.sail
 SAIL_REGS_SRCS = cheri/cheri_reg_type.sail riscv_regs.sail riscv_sys_regs.sail cheri/cheri_sys_regs.sail cheri/cheri_regs.sail
-SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail $(SAIL_REGS_SRCS) $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
+SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail $(SAIL_REGS_SRCS) $(SAIL_SYS_SRCS) riscv_platform.sail
+SAIL_ARCH_SRCS += riscv_mem.sail cheri/cheri_mem.sail $(SAIL_VM_SRCS)
 SAIL_ARCH_RVFI_SRCS = $(PRELUDE) rvfi_dii.sail riscv_types.sail $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
 
 # Control inclusion of 64-bit only riscv_analysis
