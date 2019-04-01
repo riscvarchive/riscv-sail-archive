@@ -13,7 +13,8 @@ function handle_trap_extension(p : Privilege, pc : xlenbits, ccause : option(che
       /* XXX should legalize pc here? */
       let (representable, mepcc) = setCapAddr(PCC, pc);
       assert(representable, "mepcc should always be representable");
-      MEPCC = mepcc
+      MEPCC   = mepcc;
+      nextPCC = MTCC
     },
     Supervisor => {
       match ccause {
@@ -24,7 +25,8 @@ function handle_trap_extension(p : Privilege, pc : xlenbits, ccause : option(che
       /* XXX should legalize pc here? */
       let (representable, sepcc) = setCapAddr(PCC, pc);
       assert(representable, "sepcc should always be representable");
-      SEPCC = sepcc
+      SEPCC   = sepcc;
+      nextPCC = STCC
     },
     User => {
       match ccause {
@@ -35,7 +37,20 @@ function handle_trap_extension(p : Privilege, pc : xlenbits, ccause : option(che
       /* XXX should legalize pc here? */
       let (representable, uepcc) = setCapAddr(PCC, pc);
       assert(representable, "uepcc should always be representable");
-      UEPCC = uepcc
+      UEPCC   = uepcc;
+      nextPCC = UTCC
     }
+  }
+}
+
+function get_trap_vector(p : Privilege, c : Mcause) -> xlenbits = {
+  let tcc : Capability = match p {
+                           Machine    => MTCC,
+                           Supervisor => STCC,
+                           User       => UTCC
+                         };
+  match tvec_addr(Mk_Mtvec(getCapOffsetBits(tcc)), c) {
+    Some(epc) => epc,
+    None()    => internal_error("Invalid tvec mode")
   }
 }

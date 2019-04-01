@@ -306,10 +306,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       match tvec_addr(mtvec, mcause) {
-         Some(epc) => epc,
-         None()    => internal_error("Invalid mtvec mode")
-       }
+       get_trap_vector(del_priv, mcause)
     },
     Supervisor => {
        //assert (haveSupMode());
@@ -333,11 +330,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       match tvec_addr(stvec, scause) {
-         Some(epc) => epc,
-         None()    => internal_error("Invalid stvec mode")
-       }
-
+       get_trap_vector(del_priv, scause)
     },
     User => {
        //assert(haveUsrMode());
@@ -356,10 +349,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       match tvec_addr(utvec, ucause) {
-         Some(epc) => epc,
-         None()    => internal_error("Invalid utvec mode")
-       }
+       get_trap_vector(del_priv, ucause)
     }
   };
 }
