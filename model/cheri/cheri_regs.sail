@@ -1,59 +1,92 @@
-/* Cheri architectural registers */
+/* accessors for capability representation */
 
-register PCC       : Capability
-register nextPCC   : Capability
-register DDC       : Capability
-
-register UTCC      : Capability
-register UScratchC : Capability
-register UEPCC     : Capability
-register STCC      : Capability
-register SScratchC : Capability
-register SEPCC     : Capability
-register MTCC      : Capability
-register MScratchC : Capability
-register MEPCC     : Capability
-
-/* Cheri DDC interpretation */
-
-union DDC_Result = {
-  DDC_Address : xlenbits,
-  DDC_Failure : CapEx
+/* reads a given capability register, or the null capability if the argument is zero. */
+val readCapReg : forall 'n, 0 <= 'n < 32. regno('n) -> regtype effect {rreg}
+function readCapReg r = {
+  match r {
+    0  => zero_reg,
+    1  => x1,
+    2  => x2,
+    3  => x3,
+    4  => x4,
+    5  => x5,
+    6  => x6,
+    7  => x7,
+    8  => x8,
+    9  => x9,
+    10 => x10,
+    11 => x11,
+    12 => x12,
+    13 => x13,
+    14 => x14,
+    15 => x15,
+    16 => x16,
+    17 => x17,
+    18 => x18,
+    19 => x19,
+    20 => x20,
+    21 => x21,
+    22 => x22,
+    23 => x23,
+    24 => x24,
+    25 => x25,
+    26 => x26,
+    27 => x27,
+    28 => x28,
+    29 => x29,
+    30 => x30,
+    31 => x31
+  }
 }
 
-val translateDDC : (xlenbits, AccessType, word_width) -> DDC_Result effect {rreg, escape}
-function translateDDC (addr, at, width) = {
-  let ddc = DDC;
-  let have_rqd_load_perm : bool = match at {
-    Read       => ddc.permit_load,
-    Write      => true,
-    ReadWrite  => ddc.permit_load,
-    Execute    => false /* DDC should only be for load/store */
-  };
-  let have_rqd_store_perm : bool = match at {
-    Read       => true,
-    Write      => ddc.permit_store,
-    ReadWrite  => ddc.permit_store,
-    Execute    => false /* DDC should only be for load/store */
-  };
-  let newAddr = (getCapCursor(ddc) + unsigned(addr)) % pow2(sizeof(xlen));
-  let size  = word_width_bytes(width);
-  let (base, top) = getCapBounds(ddc);
+/* as per [readCapReg] but reads DDC instead of null when argument is zero. */
+val readCapRegDDC : forall 'n, 0 <= 'n < 32 . regno('n) -> Capability effect {rreg}
+function readCapRegDDC(r) =
+  if r == 0 then DDC else readCapReg(r)
 
-  if not(ddc.tag) then
-    DDC_Failure(CapEx_TagViolation)
-  else if ddc.sealed then
-    DDC_Failure(CapEx_SealViolation)
-  else if not(have_rqd_load_perm) then
-    DDC_Failure(CapEx_PermitLoadViolation)
-  else if not(have_rqd_store_perm) then
-    DDC_Failure(CapEx_PermitStoreViolation)
-  else if (newAddr + size) > top then
-    DDC_Failure(CapEx_LengthViolation)
-  else if newAddr < base then
-    DDC_Failure(CapEx_LengthViolation)
-  else
-    DDC_Address(to_bits(64, newAddr))
+/* writes a register with a capability value */
+val writeCapReg : forall 'n, 0 <= 'n < 32. (regno('n), regtype) -> unit effect {wreg, escape}
+function writeCapReg (r, v) = {
+  match r {
+    0  => (),
+    1  => x1 = v,
+    2  => x2 = v,
+    3  => x3 = v,
+    4  => x4 = v,
+    5  => x5 = v,
+    6  => x6 = v,
+    7  => x7 = v,
+    8  => x8 = v,
+    9  => x9 = v,
+    10 => x10 = v,
+    11 => x11 = v,
+    12 => x12 = v,
+    13 => x13 = v,
+    14 => x14 = v,
+    15 => x15 = v,
+    16 => x16 = v,
+    17 => x17 = v,
+    18 => x18 = v,
+    19 => x19 = v,
+    20 => x20 = v,
+    21 => x21 = v,
+    22 => x22 = v,
+    23 => x23 = v,
+    24 => x24 = v,
+    25 => x25 = v,
+    26 => x26 = v,
+    27 => x27 = v,
+    28 => x28 = v,
+    29 => x29 = v,
+    30 => x30 = v,
+    31 => x31 = v
+  };
+  if (r != 0) then {
+     rvfi_wX(r, v.address);
+     print_reg("x" ^ string_of_int(r) ^ " <- " ^ RegStr(v));
+  }
 }
+
 
 val raise_c2_exception6 : (CapEx, bits(6)) -> bool effect {escape, rreg, wreg}
+

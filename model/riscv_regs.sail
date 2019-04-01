@@ -133,7 +133,7 @@ function wX (r, in_v) = {
     31 => x31 = v
   };
   if (r != 0) then {
-     rvfi_wX(r,in_v);
+     rvfi_wX(r, in_v);
      // Xs[r] = v;
      print_reg("x" ^ string_of_int(r) ^ " <- " ^ RegStr(v));
   }

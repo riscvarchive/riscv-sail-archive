@@ -80,7 +80,7 @@ function clause execute (CGetPerm(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = zero_extend(getCapPerms(capVal));
+  X(rd) = EXTZ(getCapPerms(capVal));
   true
 }
 
@@ -88,9 +88,9 @@ function clause execute (CGetType(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = if capVal.sealed
-    then zero_extend(capVal.otype)
-    else 0xffffffffffffffff;
+  X(rd) = if   capVal.sealed
+          then EXTZ(capVal.otype)
+          else 0xffffffffffffffff;
   true
 }
 
@@ -98,7 +98,7 @@ function clause execute (CGetBase(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = to_bits(64, getCapBase(capVal));
+  X(rd) = to_bits(64, getCapBase(capVal));
   true
 }
 
@@ -106,7 +106,7 @@ function clause execute (CGetOffset(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = to_bits(64, getCapOffset(capVal));
+  X(rd) = to_bits(64, getCapOffset(capVal));
   true
 }
 
@@ -115,7 +115,7 @@ function clause execute (CGetLen(rd, cb)) =
   checkCP2usable();
   let capVal = readCapReg(cb);
   let len65  = getCapLength(capVal);
-  wGPR(rd) = to_bits(64, if len65 > MAX_U64 then MAX_U64 else len65);
+  X(rd) = to_bits(64, if len65 > MAX_U64 then MAX_U64 else len65);
   true
 }
 
@@ -123,7 +123,7 @@ function clause execute (CGetTag(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = zero_extend(capVal.tag);
+  X(rd) = EXTZ(capVal.tag);
   true
 }
 
@@ -131,7 +131,7 @@ function clause execute (CGetSealed(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = zero_extend(capVal.sealed);
+  X(rd) = EXTZ(capVal.sealed);
   true
 }
 
@@ -139,7 +139,7 @@ function clause execute (CGetAddr(rd, cb)) =
 {
   checkCP2usable();
   let capVal = readCapReg(cb);
-  wGPR(rd) = to_bits(64, getCapCursor(capVal));
+  X(rd) = to_bits(64, getCapCursor(capVal));
   true
 }
 /*
@@ -165,7 +165,7 @@ function clause execute (CGetCause(rd)) =
   if not (pcc_access_system_regs ()) then
     raise_c2_exception_pcc(CapEx_AccessSystemRegsViolation)
   else {
-    wGPR(rd) = zero_extend(CapCause.bits());
+    X(rd) = EXTZ(CapCause.bits());
     true
   }
 }
@@ -178,7 +178,7 @@ function clause execute (CSetCause(rt)) =
     raise_c2_exception_pcc(CapEx_AccessSystemRegsViolation)
   else
   {
-    let rt_val = rGPR(rt);
+    let rt_val = X(rt);
     CapCause->ExcCode() = rt_val[15..8];
     CapCause->RegNum()  = rt_val[7..0];
     true
@@ -261,7 +261,7 @@ function clause execute(CAndPerm(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let rt_val = rGPR(rt);
+  let rt_val = X(rt);
   if not (cb_val.tag) then
     raise_c2_exception(CapEx_TagViolation, cb)
   else if cb_val.sealed then
@@ -291,7 +291,7 @@ function clause execute(CToPtr(rd, cb, ct)) =
   {
     let ctBase = getCapBase(ct_val);
     /* Note: returning zero for untagged values breaks magic constants such as SIG_IGN */
-    wGPR(rd) = if not (cb_val.tag) then
+    X(rd) = if not (cb_val.tag) then
         zeros()
       else
         to_bits(64, getCapCursor(cb_val) - ctBase);
@@ -304,7 +304,7 @@ function clause execute (CIncOffset(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let rt_val = rGPR(rt);
+  let rt_val = X(rt);
   if cb_val.tag & cb_val.sealed & (rt_val != 0x0000000000000000) then
     raise_c2_exception(CapEx_SealViolation, cb)
   else
@@ -323,7 +323,7 @@ function clause execute (CIncOffsetImmediate(cd, cb, imm)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let imm64 : bits(64) = sign_extend(imm);
+  let imm64 : bits(64) = EXTS(imm);
   if cb_val.tag & cb_val.sealed then
     raise_c2_exception(CapEx_SealViolation, cb)
   else
@@ -342,7 +342,7 @@ function clause execute (CSetOffset(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let rt_val = rGPR(rt);
+  let rt_val = X(rt);
   if cb_val.tag & cb_val.sealed then
     raise_c2_exception(CapEx_SealViolation, cb)
   else
@@ -361,7 +361,7 @@ function clause execute (CSetBounds(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let rt_val = unsigned(rGPR(rt));
+  let rt_val = unsigned(X(rt));
   let cursor = getCapCursor(cb_val);
   let base   = getCapBase(cb_val);
   let top    = getCapTop(cb_val);
@@ -413,7 +413,7 @@ function clause execute (CSetBoundsExact(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapReg(cb);
-  let rt_val = unsigned(rGPR(rt));
+  let rt_val = unsigned(X(rt));
   let cursor = getCapCursor(cb_val);
   let base   = getCapBase(cb_val);
   let top    = getCapTop(cb_val);
@@ -465,7 +465,7 @@ function clause execute (ClearRegs(regset, q, m)) =
   foreach (i from 0 to 7)
     if (m[i]) then
       match regset {
-        GPRegs => wGPR(8 * unsigned(q) + i) = zeros(),
+        GPRegs => X(8 * unsigned(q) + i) = zeros(),
         FPRegs => () /* XXX no F regs yet */
       };
   true
@@ -476,7 +476,7 @@ function clause execute (CFromPtr(cd, cb, rt)) =
 {
   checkCP2usable();
   let cb_val = readCapRegDDC(cb);
-  let rt_val = rGPR(rt);
+  let rt_val = X(rt);
   if rt_val == 0x0000000000000000 then {
     writeCapReg(cd, null_cap);
     true
@@ -572,8 +572,8 @@ function clause execute (CCheckPerm(cs, rt)) =
 {
   checkCP2usable();
   let cs_val = readCapReg(cs);
-  let cs_perms : bits(64) = zero_extend(getCapPerms(cs_val));
-  let rt_perms = rGPR(rt);
+  let cs_perms : bits(64) = EXTZ(getCapPerms(cs_val));
+  let rt_perms = X(rt);
   if not (cs_val.tag) then
     raise_c2_exception(CapEx_TagViolation, cs)
   else if (cs_perms & rt_perms) != rt_perms then
@@ -635,7 +635,7 @@ function clause execute (CTestSubset(rd, cb, ct)) =
                 0b0
            else
                 0b1;
-  wGPR(rd) = zero_extend(result);
+  X(rd) = EXTZ(result);
   true
 }
 
@@ -1103,8 +1103,8 @@ function clause execute (CLoadTags(rd, cb)) =
         let tag5   = MEMr_tag(pAddr + 5*cap_size);
         let tag6   = MEMr_tag(pAddr + 6*cap_size);
         let tag7   = MEMr_tag(pAddr + 7*cap_size);
-        wGPR(rd)   = zero_extend (tag7 @ tag6 @ tag5 @ tag4
-                                @ tag3 @ tag2 @ tag1 @ tag0);
+        X(rd)      = EXTZ (tag7 @ tag6 @ tag5 @ tag4
+                           @ tag3 @ tag2 @ tag1 @ tag0);
         true
       }
   }
@@ -1125,7 +1125,7 @@ function clause execute (CStore(rs, cb, rt, offset, width)) =
   {
     let size   = wordWidthBytes(width);
     let cursor = getCapCursor(cb_val);
-    let vAddr  = (cursor + unsigned(rGPR(rt)) + size * signed(offset)) % pow2(64);
+    let vAddr  = (cursor + unsigned(X(rt)) + size * signed(offset)) % pow2(64);
     let vAddr64= to_bits(64, vAddr);
     if (vAddr + size) > getCapTop(cb_val) then
       raise_c2_exception(CapEx_LengthViolation, cb)
@@ -1136,7 +1136,7 @@ function clause execute (CStore(rs, cb, rt, offset, width)) =
     else
     {
       let pAddr  = TLBTranslate(vAddr64, StoreData);
-      let rs_val = rGPR(rs);
+      let rs_val = X(rs);
       match width
       {
         B  => MEMw_wrapper(pAddr, 1) = rs_val[7..0],
@@ -1174,7 +1174,7 @@ function clause execute (CStoreConditional(rs, cb, rd, width)) =
     else
     {
       let pAddr  = TLBTranslate(vAddr64, StoreData);
-      let rs_val = rGPR(rs);
+      let rs_val = X(rs);
       let success : bool = if (CP0LLBit[0]) then
           match width
           {
@@ -1185,7 +1185,7 @@ function clause execute (CStoreConditional(rs, cb, rd, width)) =
           }
         else
           false;
-      wGPR(rd) = zero_extend(success);
+      X(rd) = EXTZ(success);
       true
     }
   }
@@ -1210,7 +1210,7 @@ function clause execute (CSC(cs, cb, rt, offset)) =
   else
   {
     let cursor  = getCapCursor(cb_val);
-    let vAddr   = (cursor + unsigned(rGPR(rt)) + 16 * signed(offset)) % pow2(64);
+    let vAddr   = (cursor + unsigned(X(rt)) + 16 * signed(offset)) % pow2(64);
     let vAddr64 = to_bits(64, vAddr);
     if (vAddr + cap_size) > getCapTop(cb_val) then
       raise_c2_exception(CapEx_LengthViolation, cb)
@@ -1268,7 +1268,7 @@ function clause execute (CSCC(cs, cb, rd)) =
             MEMw_tagged_conditional(pAddr, cs_val.tag, capToMemBits(cs_val))
           else
             false;
-        wGPR(rd) = zero_extend(success);
+        X(rd) = EXTZ(success);
         true
       }
     }
@@ -1289,7 +1289,7 @@ function clause execute (CLC(cd, cb, rt, offset)) =
   else
   {
     let cursor  = getCapCursor(cb_val);
-    let vAddr   = (cursor + unsigned(rGPR(rt)) + 16 * signed(offset)) % pow2(64);
+    let vAddr   = (cursor + unsigned(X(rt)) + 16 * signed(offset)) % pow2(64);
     let vAddr64 = to_bits(64, vAddr);
     if (vAddr + cap_size) > getCapTop(cb_val) then
       raise_c2_exception(CapEx_LengthViolation, cb)
