@@ -417,7 +417,6 @@ function handle_interrupt(i : InterruptType, del_priv : Privilege) -> unit =
 
 /* state state initialization */
 
-val sys_enable_rvc = {c: "sys_enable_rvc", ocaml: "Platform.enable_rvc", _: "sys_enable_rvc"} : unit -> bool
 function init_sys() -> unit = {
   cur_privilege = Machine;
 

@@ -71,3 +71,11 @@ function translateDDC (addr, at, width) = {
   else
     DDC_Address(to_bits(64, newAddr))
 }
+
+/* Cheri PCC helpers */
+
+function min_instruction_bytes () -> int = {
+  if   (~ (sys_enable_writable_misa ())) & (~ (sys_enable_rvc ()))
+  then 4  /* RVC is hardwired to be disabled */
+  else 2  /* RVC is active or it could become active */
+}
