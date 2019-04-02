@@ -4,7 +4,7 @@ type ext_exception = unit
 
 function handle_trap_extension(p : Privilege, pc : xlenbits, u : option(unit)) -> unit = ()
 
-function get_trap_vector(p : Privilege, cause : Mcause) -> xlenbits = {
+function prepare_trap_vector(p : Privilege, cause : Mcause) -> xlenbits = {
   let tvec : Mtvec = match p {
                        Machine    => mtvec,
                        Supervisor => stvec,

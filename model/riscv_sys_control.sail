@@ -306,7 +306,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       get_trap_vector(del_priv, mcause)
+       prepare_trap_vector(del_priv, mcause)
     },
     Supervisor => {
        //assert (haveSupMode());
@@ -330,7 +330,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       get_trap_vector(del_priv, scause)
+       prepare_trap_vector(del_priv, scause)
     },
     User => {
        //assert(haveUsrMode());
@@ -349,7 +349,7 @@ function handle_trap(del_priv : Privilege, intr : bool, c : exc_code, pc : xlenb
 
        print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
 
-       get_trap_vector(del_priv, ucause)
+       prepare_trap_vector(del_priv, ucause)
     }
   };
 }

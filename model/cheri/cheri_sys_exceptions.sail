@@ -43,14 +43,14 @@ function handle_trap_extension(p : Privilege, pc : xlenbits, ccause : option(che
   }
 }
 
-function get_trap_vector(p : Privilege, c : Mcause) -> xlenbits = {
+function prepare_trap_vector(p : Privilege, c : Mcause) -> xlenbits = {
   let tcc : Capability = match p {
                            Machine    => MTCC,
                            Supervisor => STCC,
                            User       => UTCC
                          };
   match tvec_addr(Mk_Mtvec(getCapOffsetBits(tcc)), c) {
-    Some(epc) => epc,
+    Some(epc) => { nextPCC = tcc; epc },
     None()    => internal_error("Invalid tvec mode")
   }
 }
