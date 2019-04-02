@@ -35,7 +35,7 @@ PRELUDE += cheri/cheri_types.sail cheri/cheri_prelude_128.sail
 SAIL_REGS_SRCS = cheri/cheri_reg_type.sail riscv_regs.sail riscv_sys_regs.sail cheri/cheri_sys_regs.sail cheri/cheri_regs.sail
 SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail $(SAIL_REGS_SRCS) $(SAIL_SYS_SRCS) riscv_platform.sail
 SAIL_ARCH_SRCS += riscv_mem.sail cheri/cheri_mem.sail $(SAIL_VM_SRCS)
-SAIL_ARCH_RVFI_SRCS = $(PRELUDE) rvfi_dii.sail riscv_types.sail $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
+SAIL_ARCH_RVFI_SRCS = $(PRELUDE) rvfi_dii.sail riscv_types.sail $(SAIL_REGS_SRCS) $(SAIL_SYS_SRCS) riscv_platform.sail riscv_mem.sail $(SAIL_VM_SRCS)
 
 # Control inclusion of 64-bit only riscv_analysis
 ifeq ($(ARCH),RV32)
@@ -161,21 +161,21 @@ ocaml_emulator/tracecmp: ocaml_emulator/tracecmp.ml
 
 generated_definitions/c/riscv.c: $(SAIL_SRCS) model/main.sail Makefile
 	mkdir -p generated_definitions/c
-	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h $(SAIL_SRCS) model/main.sail 1> $@
+	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h $(SAIL_SRCS) model/main.sail -o $(basename $@)
 
 c_emulator/riscv_c: generated_definitions/c/riscv.c $(C_INCS) $(C_SRCS) Makefile
 	gcc $(C_WARNINGS) $(C_FLAGS) $< $(C_SRCS) $(SAIL_LIB_DIR)/*.c -lgmp -lz -I $(SAIL_LIB_DIR) -o $@
 
 generated_definitions/c/riscv_model_$(ARCH).c: $(SAIL_SRCS) model/main.sail Makefile
 	mkdir -p generated_definitions/c
-	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h -c_no_main $(SAIL_SRCS) model/main.sail 1> $@
+	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h -c_no_main $(SAIL_SRCS) model/main.sail -o $(basename $@)
 
 c_emulator/riscv_sim_$(ARCH): generated_definitions/c/riscv_model_$(ARCH).c c_emulator/riscv_sim.c $(C_INCS) $(C_SRCS) Makefile
 	gcc -g $(C_WARNINGS) $(C_FLAGS) $< c_emulator/riscv_sim.c $(C_SRCS) $(SAIL_LIB_DIR)/*.c $(C_LIBS) -o $@
 
 generated_definitions/c/riscv_rvfi_model.c: $(SAIL_RVFI_SRCS) model/main_rvfi.sail Makefile
 	mkdir -p generated_definitions/c
-	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h -c_no_main $(SAIL_RVFI_SRCS) model/main_rvfi.sail | sed '/^[[:space:]]*$$/d' > $@
+	$(SAIL) $(SAIL_FLAGS) -O -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h -c_no_main $(SAIL_RVFI_SRCS) model/main_rvfi.sail -o $(basename $@)
 
 c_emulator/riscv_rvfi: generated_definitions/c/riscv_rvfi_model.c c_emulator/riscv_sim.c $(C_INCS) $(C_SRCS) Makefile
 	gcc -g $(C_WARNINGS) $(C_FLAGS) $< -DRVFI_DII c_emulator/riscv_sim.c $(C_SRCS) $(SAIL_LIB_DIR)/*.c $(C_LIBS) -o $@
