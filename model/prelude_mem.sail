@@ -1,5 +1,9 @@
 /* These functions define the primitives for physical memory access.
  * They depend on the XLEN of the architecture.
+ *
+ * They also depend on the type of metadata that is read and written
+ * to physical memory.  For models that do not require this metadata,
+ * a unit type can be used.
  */
 
 val __WriteRAM = {lem: "MEMw", _: "write_ram"} : forall 'n 'm.
@@ -20,8 +24,10 @@ val __WriteRAM_conditional_release = {lem: "MEMw_conditional_release", _: "write
 val __WriteRAM_conditional_strong_release = {lem: "MEMw_conditional_strong_release", _: "write_ram"} : forall 'n 'm.
   (atom('m), atom('n), bits('m), bits('m), bits(8 * 'n)) -> bool effect {wmv}
 
-val __RISCV_write : forall 'n. (xlenbits, atom('n), bits(8 * 'n), bool, bool, bool) -> bool effect {wmv}
-function __RISCV_write (addr, width, data, aq, rl, con) =
+val __RISCV_write : forall 'n. (xlenbits, atom('n), bits(8 * 'n), mem_meta, bool, bool, bool) -> bool effect {wmv, wmvt}
+function __RISCV_write (addr, width, data, meta, aq, rl, con) = {
+  /* First write out metadata; there is currently no return value. */
+  __WriteRAM_Meta(addr, width, meta);
   match (aq, rl, con) {
     (false, false, false) => __WriteRAM(sizeof(xlen), width, EXTZ(0x0), addr, data),
     (false, true,  false) => __WriteRAM_release(sizeof(xlen), width, EXTZ(0x0), addr, data),
@@ -32,6 +38,7 @@ function __RISCV_write (addr, width, data, aq, rl, con) =
     (true,  false, false) => false,
     (true,  false, true)  => false
   }
+}
 
 val __TraceMemoryWrite : forall 'n 'm.
   (atom('n), bits('m), bits(8 * 'n)) -> unit

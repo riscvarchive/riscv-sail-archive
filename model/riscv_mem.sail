@@ -79,7 +79,6 @@ val MEMea_conditional_strong_release = {lem: "MEMea_conditional_strong_release",
   (xlenbits, atom('n)) -> unit effect {eamem}
 
 val mem_write_ea : forall 'n. (xlenbits, atom('n), bool, bool, bool) -> MemoryOpResult(unit) effect {eamem, escape}
-
 function mem_write_ea (addr, width, aq, rl, con) = {
   if (rl | con) & (~ (is_aligned_addr(addr, width)))
   then MemException(E_SAMO_Addr_Align)
@@ -96,17 +95,17 @@ function mem_write_ea (addr, width, aq, rl, con) = {
 }
 
 // only used for actual memory regions, to avoid MMIO effects
-function phys_mem_write forall 'n. (addr : xlenbits, width : atom('n), data: bits(8 * 'n), aq : bool, rl : bool, con : bool) -> MemoryOpResult(bool) = {
+function phys_mem_write forall 'n. (addr : xlenbits, width : atom('n), data: bits(8 * 'n), meta: mem_meta, aq : bool, rl : bool, con : bool) -> MemoryOpResult(bool) = {
   print_mem("mem[" ^ BitStr(addr) ^ "] <- " ^ BitStr(data));
-  MemValue(__RISCV_write(addr, width, data, aq, rl, con))
+  MemValue(__RISCV_write(addr, width, data, meta, aq, rl, con))
 }
 
 // dispatches to MMIO regions or physical memory regions depending on physical memory map
-function checked_mem_write forall 'n, 'n > 0. (addr : xlenbits, width : atom('n), data: bits(8 * 'n), aq : bool, rl : bool, con : bool) -> MemoryOpResult(bool) =
+function checked_mem_write forall 'n, 'n > 0. (addr : xlenbits, width : atom('n), data: bits(8 * 'n), meta: mem_meta, aq : bool, rl : bool, con : bool) -> MemoryOpResult(bool) =
   if   within_mmio_writable(addr, width)
   then mmio_write(addr, width, data)
   else if within_phys_mem(addr, width)
-  then phys_mem_write(addr, width, data, aq, rl, con)
+  then phys_mem_write(addr, width, data, meta, aq, rl, con)
   else MemException(E_SAMO_Access_Fault)
 
 /* Atomic accesses can be done to MMIO regions, e.g. in kernel access to device registers. */
@@ -125,9 +124,9 @@ val rvfi_write : forall 'n, 'n > 0. (xlenbits, atom('n), bits(8 * 'n)) -> unit
 function rvfi_write (addr, width, value) = ()
 $endif
 
+/* Memory write with a default metadata value */
 /* NOTE: The wreg effect is due to MMIO, the rreg is due to checking mtime. */
-val mem_write_value : forall 'n, 'n > 0. (xlenbits, atom('n), bits(8 * 'n), bool, bool, bool) -> MemoryOpResult(bool) effect {wmv, rreg, wreg, escape}
-
+val mem_write_value : forall 'n, 'n > 0. (xlenbits, atom('n), bits(8 * 'n), bool, bool, bool) -> MemoryOpResult(bool) effect {wmv, wmvt, rreg, wreg, escape}
 function mem_write_value (addr, width, value, aq, rl, con) = {
   rvfi_write(addr, width, value);
   if (rl | con) & (~ (is_aligned_addr(addr, width)))
@@ -135,7 +134,21 @@ function mem_write_value (addr, width, value, aq, rl, con) = {
   else match (aq, rl, con) {
     (true,  false, false) => throw(Error_not_implemented("store.aq")),
     (true,  false, true)  => throw(Error_not_implemented("sc.aq")),
-    (_, _, _)             => checked_mem_write(addr, width, value, aq, rl, con)
+    (_, _, _)             => checked_mem_write(addr, width, value, default_meta, aq, rl, con)
+  }
+}
+
+/* Memory write with an explicit metadata value */
+/* NOTE: The wreg effect is due to MMIO, the rreg is due to checking mtime. */
+val mem_write_value_meta : forall 'n, 'n > 0. (xlenbits, atom('n), bits(8 * 'n), mem_meta, bool, bool, bool) -> MemoryOpResult(bool) effect {wmv, wmvt, rreg, wreg, escape}
+function mem_write_value_meta (addr, width, value, meta, aq, rl, con) = {
+  rvfi_write(addr, width, value);
+  if (rl | con) & (~ (is_aligned_addr(addr, width)))
+  then MemException(E_SAMO_Addr_Align)
+  else match (aq, rl, con) {
+    (true,  false, false) => throw(Error_not_implemented("store.aq")),
+    (true,  false, true)  => throw(Error_not_implemented("sc.aq")),
+    (_, _, _)             => checked_mem_write(addr, width, value, meta, aq, rl, con)
   }
 }
 

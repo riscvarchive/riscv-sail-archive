@@ -40,7 +40,7 @@ SAIL_VM_SRCS += $(SAIL_RV64_VM_SRCS)
 endif
 
 # Non-instruction sources
-PRELUDE = prelude.sail prelude_mapping.sail $(SAIL_XLEN) prelude_mem.sail
+PRELUDE = prelude.sail prelude_mapping.sail $(SAIL_XLEN) prelude_mem_metadata.sail prelude_mem.sail
 SAIL_REGS_SRCS = riscv_reg_type.sail riscv_regs.sail riscv_sys_regs.sail
 SAIL_ARCH_SRCS = $(PRELUDE) riscv_types.sail $(SAIL_REGS_SRCS) $(SAIL_SYS_SRCS) riscv_platform.sail
 SAIL_ARCH_SRCS += riscv_mem.sail $(SAIL_VM_SRCS)
