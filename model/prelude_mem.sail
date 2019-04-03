@@ -68,6 +68,7 @@ val __ReadRAM_reserved_acquire = { lem: "MEMr_reserved_acquire", _ : "read_ram" 
 val __ReadRAM_reserved_strong_acquire = { lem: "MEMr_reserved_strong_acquire", _ : "read_ram" } : forall 'n 'm, 'n >= 0.
   (atom('m), atom('n), bits('m), bits('m)) -> bits(8 * 'n) effect {rmem}
 
+/* FIXME: the metadata is currently not read atomically wrt the value. */
 val __RISCV_read : forall 'n, 'n >= 0. (xlenbits, atom('n), bool, bool, bool) -> option(bits(8 * 'n)) effect {rmem}
 function __RISCV_read (addr, width, aq, rl, res) =
   match (aq, rl, res) {
