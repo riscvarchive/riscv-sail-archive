@@ -26,8 +26,7 @@ val __WriteRAM_conditional_strong_release = {lem: "MEMw_conditional_strong_relea
 
 val __RISCV_write : forall 'n. (xlenbits, atom('n), bits(8 * 'n), mem_meta, bool, bool, bool) -> bool effect {wmv, wmvt}
 function __RISCV_write (addr, width, data, meta, aq, rl, con) = {
-  /* First write out metadata; there is currently no return value. */
-  __WriteRAM_Meta(addr, width, meta);
+  let ret : bool =
   match (aq, rl, con) {
     (false, false, false) => __WriteRAM(sizeof(xlen), width, EXTZ(0x0), addr, data),
     (false, true,  false) => __WriteRAM_release(sizeof(xlen), width, EXTZ(0x0), addr, data),
@@ -37,7 +36,15 @@ function __RISCV_write (addr, width, data, meta, aq, rl, con) = {
     (true,  true,  true)  => __WriteRAM_conditional_strong_release(sizeof(xlen), width, EXTZ(0x0), addr, data),
     (true,  false, false) => false,
     (true,  false, true)  => false
-  }
+  };
+  /* Write out metadata only if the value write succeeds.
+   * It is assumed for now that this write always succeeds;
+   * there is currently no return value.
+   * FIXME: We should convert the external API to consume
+   * the value along with the metadata to ensure atomicity.
+   */
+  if ret then __WriteRAM_Meta(addr, width, meta);
+  ret
 }
 
 val __TraceMemoryWrite : forall 'n 'm.
