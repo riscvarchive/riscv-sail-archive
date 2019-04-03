@@ -12,8 +12,9 @@ SAIL_RMEM_INST_SRCS = riscv_insts_begin.sail $(SAIL_RMEM_INST) riscv_insts_end.s
 
 # System and platform sources
 SAIL_SYS_SRCS = riscv_csr_map.sail
-SAIL_SYS_SRCS += riscv_next_regs.sail riscv_next_control.sail
+SAIL_SYS_SRCS += riscv_next_regs.sail
 SAIL_SYS_SRCS += cheri/cheri_sys_exceptions.sail
+SAIL_SYS_SRCS += riscv_next_control.sail
 SAIL_SYS_SRCS += riscv_sys_control.sail
 
 SAIL_RV32_VM_SRCS = riscv_vmem_sv32.sail riscv_vmem_rv32.sail

@@ -43,6 +43,7 @@ function handle_trap_extension(p : Privilege, pc : xlenbits, ccause : option(che
   }
 }
 
+/* used for traps and ECALL */
 function prepare_trap_vector(p : Privilege, c : Mcause) -> xlenbits = {
   let tcc : Capability = match p {
                            Machine    => MTCC,
@@ -53,4 +54,24 @@ function prepare_trap_vector(p : Privilege, c : Mcause) -> xlenbits = {
     Some(epc) => { nextPCC = tcc; epc },
     None()    => internal_error("Invalid tvec mode")
   }
+}
+
+/* used for xRET */
+val get_xret_target : Privilege -> xlenbits effect {rreg}
+function get_xret_target(p) =
+  match p {
+    Machine    => getCapOffsetBits(MEPCC),
+    Supervisor => getCapOffsetBits(SEPCC),
+    User       => getCapOffsetBits(UEPCC)
+  }
+
+val set_xret_target : (Privilege, xlenbits) -> xlenbits effect {rreg, wreg}
+function set_xret_target(p, value) = {
+  let target = legalize_xepc(value);
+  match p {
+    Machine    => MEPCC = setCapOffsetOrNull(MEPCC, target),
+    Supervisor => SEPCC = setCapOffsetOrNull(SEPCC, target),
+    User       => UEPCC = setCapOffsetOrNull(UEPCC, target)
+  };
+  target
 }
