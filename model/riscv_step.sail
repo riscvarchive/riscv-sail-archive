@@ -1,9 +1,14 @@
 /* The emulator fetch-execute-interrupt dispatch loop. */
 
+/* Current fetch hooks for RISC-V extensions call extensions
+ * to check PC validity *before* standard fetch processing checks.
+ */
+
 union FetchResult = {
-  F_Base  : word,                      /* Base ISA */
-  F_RVC   : half,                      /* Compressed ISA */
-  F_Error : (ExceptionType, xlenbits)  /* exception and PC */
+  F_Ext_Error : ext_fetch_error,           /* For extensions */
+  F_Base      : word,                      /* Base ISA */
+  F_RVC       : half,                      /* Compressed ISA */
+  F_Error     : (ExceptionType, xlenbits)  /* standard exception and PC */
 }
 
 function isRVC(h : half) -> bool =
@@ -11,28 +16,40 @@ function isRVC(h : half) -> bool =
 
 val fetch : unit -> FetchResult effect {escape, rmem, rreg, wmv, wmvt, wreg}
 function fetch() -> FetchResult =
-  /* check for legal PC */
-  if (PC[0] != 0b0 | (PC[1] != 0b0 & (~ (haveRVC()))))
-  then F_Error(E_Fetch_Addr_Align, PC)
-  else match translateAddr(PC, Execute, Instruction) {
-    TR_Failure(e)  => F_Error(e, PC),
-    TR_Address(ppclo) => {
-      /* split instruction fetch into 16-bit granules to handle RVC, as
-       * well as to generate precise fault addresses in any fetch
-       * exceptions.
-       */
-      match checked_mem_read(Instruction, ppclo, 2, false, false, false) {
-        MemException(e) => F_Error(E_Fetch_Access_Fault, PC),
-        MemValue(ilo) => {
-          if isRVC(ilo) then F_RVC(ilo)
-          else {
-            PChi : xlenbits = PC + 2;
-            match translateAddr(PChi, Execute, Instruction) {
-              TR_Failure(e) => F_Error(e, PChi),
-              TR_Address(ppchi) => {
-                match checked_mem_read(Instruction, ppchi, 2, false, false, false) {
-                  MemException(e) => F_Error(E_Fetch_Access_Fault, PChi),
-                  MemValue(ihi) => F_Base(append(ihi, ilo))
+  /* fetch PC check for extensions */
+  match ext_fetch_check_pc(PC, PC) {
+    Ext_Fetch_Error(e)   => F_Ext_Error(e),
+    Ext_Fetch_OK(use_pc) => {
+      if   (use_pc[0] != 0b0 | (use_pc[1] != 0b0 & (~ (haveRVC()))))
+      then F_Error(E_Fetch_Addr_Align, PC)   /* should this be use_pc or PC? */
+      else match translateAddr(use_pc, Execute, Instruction) {
+        TR_Failure(e)     => F_Error(e, PC), /* should this be use_pc or PC? */
+        TR_Address(ppclo) => {
+          /* split instruction fetch into 16-bit granules to handle RVC, as
+           * well as to generate precise fault addresses in any fetch
+           * exceptions.
+           */
+          match checked_mem_read(Instruction, ppclo, 2, false, false, false) {
+            MemException(e) => F_Error(E_Fetch_Access_Fault, PC), /* should this be use_pc or PC? */
+            MemValue(ilo)   => {
+              if   isRVC(ilo)
+              then F_RVC(ilo)
+              else {
+                /* fetch PC check for the next instruction granule */
+                PC_hi : xlenbits = PC + 2;
+                match ext_fetch_check_pc(PC, PC_hi) {
+                  Ext_Fetch_Error(e)      => F_Ext_Error(e),
+                    Ext_Fetch_OK(use_pc_hi) => {
+                    match translateAddr(use_pc_hi, Execute, Instruction) {
+                      TR_Failure(e)     => F_Error(e, PC_hi), /* should this be use_pc_hi or PC_hi? */
+                      TR_Address(ppchi) => {
+                        match checked_mem_read(Instruction, ppchi, 2, false, false, false) {
+                          MemException(e) => F_Error(E_Fetch_Access_Fault, PC_hi),  /* should this be use_pc_hi or PC_hi? */
+                          MemValue(ihi)   => F_Base(append(ihi, ilo))
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -55,10 +72,17 @@ function step(step_no) = {
       },
       None() => {
         match fetch() {
+          /* extension error */
+          F_Ext_Error(e)   => {
+            ext_handle_fetch_check_error(e);
+            (false, false)
+          },
+          /* standard error */
           F_Error(e, addr) => {
             handle_mem_exception(addr, e);
             (false, false)
           },
+          /* non-error cases: */
           F_RVC(h) => {
             match decodeCompressed(h) {
               None() => {
