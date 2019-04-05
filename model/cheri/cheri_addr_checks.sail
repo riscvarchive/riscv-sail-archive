@@ -1,4 +1,39 @@
-/* control and address checks for CHERI */
+/* Error handlers for address check errors */
+
+function raise_c2_exception6(capEx, regnum) =
+  {
+    print("CHERI " ^ string_of_capex(capEx) ^ " Reg=" ^ BitStr(regnum));
+    let cause : cheri_cause = struct {
+        cap_idx = regnum,
+        capEx   = capEx
+    };
+    let t : sync_exception = struct {
+      trap    = E_CHERI,
+      excinfo = (None() : option(xlenbits)),
+      ext     = Some(cause)
+    };
+    nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC);
+    false
+  }
+
+/*!
+causes the processor to raise a capability exception by writing the given capability exception cause and register number to the xccsr register then signalling an exception. */
+val raise_c2_exception : (CapEx, bits(5)) -> bool effect {escape, rreg, wreg}
+function raise_c2_exception(capEx, regnum) =
+  let reg6 = 0b0 @ regnum in
+  raise_c2_exception6(capEx, reg6)
+
+/*!
+is as [raise_c2_exception] except that CapCause.RegNum  is written with the special value 0x10 indicating PCC register.
+ */
+val raise_c2_exception_pcc : (CapEx) -> bool effect {escape, rreg, wreg}
+function raise_c2_exception_pcc(capEx) =
+  raise_c2_exception6(capEx, 0b100000)
+
+val pcc_access_system_regs : unit -> bool effect {rreg}
+function pcc_access_system_regs () = PCC.access_system_regs
+
+/* CHERI fetch address checks */
 
 type ext_fetch_error = CapEx
 
@@ -35,6 +70,52 @@ function ext_fetch_check_pc(start_pc, pc) = {
 
 function ext_handle_fetch_check_error(e : ext_fetch_error) -> unit = {
   /* FIXME: check if we can avoid the ignored boolean return */
+  /* FIXME: rename to be more risc-v friendly? */
   let _ = raise_c2_exception_pcc(e);
   ()
+}
+
+/* CHERI control address checks */
+
+type ext_control_error = (CapEx, bits(6)) // FIXME: use a type name for bits(6)
+
+/* the control address is derived from a non-PC register, e.g. in JALR */
+function ext_control_check_addr(pc : xlenbits) -> Ext_Control_Check(ext_control_error) = {
+  let pcc_base = getCapBaseBits(PCC);
+  /* We are given the addr without any bit[0] clearing, so the addition
+   * below may include a set addr[0], and so the bounds checks should
+   * be accurate.
+   */
+  let target : xlenbits = (pcc_base + pc)[63 .. 1] @ 0b0;
+  if   not(inCapBounds(PCC, target, 4 /* FIXME-BAD: min_instruction_bytes () */))
+  then Ext_Control_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
+  else Ext_Control_OK(target)
+}
+
+/* the control address is derived from the PC register, e.g. in JAL */
+function ext_control_check_pc(pc : xlenbits) -> Ext_Control_Check(ext_control_error) = {
+  if   not(inCapBounds(PCC, pc, 4 /* FIXME-BAD: min_instruction_bytes () */))
+  then Ext_Control_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
+  else Ext_Control_OK(pc)
+}
+
+function ext_handle_control_check_error(err : ext_control_error) -> unit = {
+  let (capEx, regnum) = err;
+  /* FIXME: check if we can avoid the ignored boolean return */
+  /* FIXME: rename to be more risc-v friendly? */
+  let _ = raise_c2_exception6(capEx, regnum);
+  ()
+}
+
+/* Access to architectural addresses */
+
+val get_next_pc : unit -> xlenbits effect {rreg}
+function get_next_pc() = {
+  nextPC - getCapBaseBits(PCC)
+}
+
+val set_next_pc : xlenbits -> unit effect {wreg}
+function set_next_pc(pc) = {
+  /* could check for internal errors here on invalid pc */
+  nextPC = pc
 }

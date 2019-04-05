@@ -50,15 +50,25 @@ but this is difficult
 */
 
 function clause execute (RISCV_JAL(imm, rd)) = {
-  let pc : xlenbits = PC;
-  let newPC : xlenbits = pc + EXTS(imm);
-  if newPC[1] & (~ (haveRVC())) then {
-    handle_mem_exception(newPC, E_Fetch_Addr_Align);
-    false
-  } else {
-    X(rd) = nextPC;  /* compatible with JAL and C.JAL */
-    nextPC = newPC;
-    true
+  let t : xlenbits = PC + EXTS(imm);
+  /* Extensions get the first checks on the prospective target address. */
+  match ext_control_check_pc(t) {
+    Ext_Control_Error(e) => {
+      ext_handle_control_check_error(e);
+      false
+    },
+    Ext_Control_OK(target) => {
+      /* Perform standard alignment check */
+      if   target[1] & (~ (haveRVC()))
+      then {
+        handle_mem_exception(target, E_Fetch_Addr_Align);
+        false
+      } else {
+        X(rd) = get_next_pc();
+        set_next_pc(target);
+        true
+      }
+    }
   }
 }
 

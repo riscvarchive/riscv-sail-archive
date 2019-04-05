@@ -32,39 +32,6 @@
 /*  SUCH DAMAGE.                                                          */
 /*========================================================================*/
 
-function raise_c2_exception6(capEx, regnum) =
-  {
-    print("CHERI " ^ string_of_capex(capEx) ^ " Reg=" ^ BitStr(regnum));
-    let cause : cheri_cause = struct {
-        cap_idx = regnum,
-        capEx   = capEx
-    };
-    let t : sync_exception = struct {
-      trap    = E_CHERI,
-      excinfo = (None() : option(xlenbits)),
-      ext     = Some(cause)
-    };
-    nextPC = handle_exception(cur_privilege, CTL_TRAP(t), PC);
-    false
-  }
-
-/*!
-causes the processor to raise a capability exception by writing the given capability exception cause and register number to the xccsr register then signalling an exception. */
-val raise_c2_exception : (CapEx, bits(5)) -> bool effect {escape, rreg, wreg}
-function raise_c2_exception(capEx, regnum) =
-  let reg6 = 0b0 @ regnum in
-  raise_c2_exception6(capEx, reg6)
-
-/*!
-is as [raise_c2_exception] except that CapCause.RegNum  is written with the special value 0x10 indicating PCC register.
- */
-val raise_c2_exception_pcc : (CapEx) -> bool effect {escape, rreg, wreg}
-function raise_c2_exception_pcc(capEx) =
-  raise_c2_exception6(capEx, 0b100000)
-
-val pcc_access_system_regs : unit -> bool effect {rreg}
-function pcc_access_system_regs () = PCC.access_system_regs
-
 /* Operations that extract parts of a capability into GPR */
 
 union clause ast = CGetPerm   : (regbits, regbits)
