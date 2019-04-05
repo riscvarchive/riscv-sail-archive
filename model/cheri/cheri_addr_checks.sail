@@ -53,7 +53,7 @@ function ext_fetch_check_pc(start_pc, pc) = {
     else    Ext_Fetch_OK(pc)
   } else {
     /* Perform only the bounds checks on the current granule, i.e. pc. */
-    if      not(inCapBounds(PCC, pc, 2)
+    if      not(inCapBounds(PCC, pc, 2))
     then    Ext_Fetch_Error(CapEx_LengthViolation)
     else    Ext_Fetch_OK(pc)
   }
