@@ -15,3 +15,8 @@ union Ext_ControlAddr_Check ('a : Type) = {
   Ext_ControlAddr_OK : xlenbits, /* PC value to use for the target of the control operation */
   Ext_ControlAddr_Error : 'a
 }
+
+union Ext_DataAddr_Check ('a : Type) = {
+  Ext_DataAddr_OK : xlenbits,    /* Address to use for the data access */
+  Ext_DataAddr_Error : 'a
+}

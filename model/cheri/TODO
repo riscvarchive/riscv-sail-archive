@@ -1,5 +1,4 @@
 - AUIPC
-- DDC
 - init_regs() for cheri
 - various fixmes
 

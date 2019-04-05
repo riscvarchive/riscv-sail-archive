@@ -98,19 +98,44 @@ function ext_handle_control_check_error(err : ext_control_addr_error) -> unit = 
   ()
 }
 
+/* CHERI data address checks */
+
+type ext_data_addr_error = (CapEx, bits(6)) // FIXME: use a type name for bits(6)
+
+function ext_data_check_addr(addr : xlenbits, acc : AccessType, rt : ReadType, width : word_width)
+         -> Ext_DataAddr_Check(ext_data_addr_error) =
+  match translateDDC(addr, acc, width) {
+    DDC_Failure(e) => Ext_DataAddr_Error(e, 0b100001),
+    DDC_Address(a) => Ext_DataAddr_OK(a)
+  }
+
+function ext_handle_data_check_error(err : ext_data_addr_error) -> unit = {
+  let (capEx, regnum) = err;
+  /* FIXME: check if we can avoid the ignored boolean return */
+  /* FIXME: rename to be more risc-v friendly? */
+  let _ = raise_c2_exception6(capEx, regnum);
+  ()
+}
+
+
 /* accessors for default architectural addresses, for use from within instructions */
 /* FIXME: these don't really belong in this file. */
 
+/* FIXME: The asymmetry between get_next_pc and set_next_pc where one
+ * returns the architectural PC but the other set the PCC-relative PC
+ * is a bit weird. The way they are currently used it is correct but
+ * we should either rename one of the functions or call set_next_pc
+ * with the original target address instead of the munged one. - RNW.
+ */
+
 val get_next_pc : unit -> xlenbits effect {rreg}
-function get_next_pc() = {
+function get_next_pc() =
   nextPC - getCapBaseBits(PCC)
-}
 
 val set_next_pc : xlenbits -> unit effect {wreg}
-function set_next_pc(pc) = {
+function set_next_pc(pc) =
   /* could check for internal errors here on invalid pc */
   nextPC = pc
-}
 
 val tick_pc : unit -> unit effect {rreg, wreg}
 function tick_pc() = {
