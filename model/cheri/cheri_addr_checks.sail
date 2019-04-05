@@ -1,5 +1,6 @@
 /* Error handlers for address check errors */
 
+val raise_c2_exception6 : (CapEx, bits(6)) -> bool effect {escape, rreg, wreg}
 function raise_c2_exception6(capEx, regnum) =
   {
     print("CHERI " ^ string_of_capex(capEx) ^ " Reg=" ^ BitStr(regnum));

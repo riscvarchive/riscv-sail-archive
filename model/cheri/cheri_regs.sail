@@ -87,6 +87,53 @@ function writeCapReg (r, v) = {
   }
 }
 
+val ext_init_regs : unit -> unit effect {wreg}
+function ext_init_regs () = {
+  PCC = default_cap;
+  DDC = default_cap;
+  nextPCC = default_cap;
 
-val raise_c2_exception6 : (CapEx, bits(6)) -> bool effect {escape, rreg, wreg}
+  UTCC = default_cap;
+  UScratchC = null_cap;
+  UEPCC = null_cap;
 
+  STCC = default_cap;
+  SScratchC = null_cap;
+  SEPCC = null_cap;
+
+  MTCC = default_cap;
+  MScratchC = null_cap;
+  MEPCC = null_cap;
+
+  x1  = default_cap;
+  x2  = default_cap;
+  x3  = default_cap;
+  x4  = default_cap;
+  x5  = default_cap;
+  x6  = default_cap;
+  x7  = default_cap;
+  x8  = default_cap;
+  x9  = default_cap;
+  x10 = default_cap;
+  x11 = default_cap;
+  x12 = default_cap;
+  x13 = default_cap;
+  x14 = default_cap;
+  x15 = default_cap;
+  x16 = default_cap;
+  x17 = default_cap;
+  x18 = default_cap;
+  x19 = default_cap;
+  x20 = default_cap;
+  x21 = default_cap;
+  x22 = default_cap;
+  x23 = default_cap;
+  x24 = default_cap;
+  x25 = default_cap;
+  x26 = default_cap;
+  x27 = default_cap;
+  x28 = default_cap;
+  x29 = default_cap;
+  x30 = default_cap;
+  x31 = default_cap
+}
