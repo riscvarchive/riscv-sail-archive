@@ -98,7 +98,8 @@ function ext_handle_control_check_error(err : ext_control_error) -> unit = {
   ()
 }
 
-/* Access to architectural addresses */
+/* accessors for default architectural addresses, for use from within instructions */
+/* FIXME: these don't really belong in this file. */
 
 val get_next_pc : unit -> xlenbits effect {rreg}
 function get_next_pc() = {
@@ -109,4 +110,10 @@ val set_next_pc : xlenbits -> unit effect {wreg}
 function set_next_pc(pc) = {
   /* could check for internal errors here on invalid pc */
   nextPC = pc
+}
+
+val tick_pc : unit -> unit effect {rreg, wreg}
+function tick_pc() = {
+  PCC = nextPCC;
+  PC = nextPC
 }

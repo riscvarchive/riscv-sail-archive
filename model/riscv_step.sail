@@ -121,7 +121,7 @@ function step(step_no) = {
         }
       }
     };
-  PC = nextPC;
+  tick_pc();
   if retired then retire_instruction();
   stepped
 }
