@@ -114,14 +114,23 @@ function clause execute (BTYPE(imm, rs2, rs1, op)) = {
     RISCV_BLTU => rs1_val <_u rs2_val,
     RISCV_BGEU => rs1_val >=_u rs2_val
   };
-  let newPC = PC + EXTS(imm);
+  let t : xlenbits = PC + EXTS(imm);
   if taken then {
-    if newPC[1] & (~ (haveRVC())) then {
-      handle_mem_exception(newPC, E_Fetch_Addr_Align);
-      false;
-    } else {
-      nextPC = newPC;
-      true
+    /* Extensions get the first checks on the prospective target address. */
+    match ext_control_check_pc(t) {
+      Ext_ControlAddr_Error(e) => {
+        ext_handle_control_check_error(e);
+        false
+      },
+      Ext_ControlAddr_OK(target) => {
+        if target[1] & (~ (haveRVC())) then {
+          handle_mem_exception(target, E_Fetch_Addr_Align);
+          false;
+        } else {
+          set_next_pc(target);
+          true
+        }
+      }
     }
   } else true
 }
