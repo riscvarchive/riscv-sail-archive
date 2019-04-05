@@ -10,8 +10,10 @@ type ext_fetch_error = unit
  *           any address translation errors are reported for pc, not the returned value.
  *           FIXME: Would this be the generally desired behaviour?
  */
-function ext_fetch_check_pc(start_pc : xlenbits, pc : xlenbits) -> Ext_Fetch_Check(ext_fetch_error) =
+function ext_fetch_check_pc(start_pc : xlenbits, pc : xlenbits) -> Ext_Fetch_Check(ext_fetch_error) = {
+  let _ = Ext_Fetch_Error(); /* FIXME: workaround for C backend */
   Ext_Fetch_OK(pc)
+}
 
 function ext_handle_fetch_check_error(err : ext_fetch_error) -> unit =
   ()
@@ -36,8 +38,10 @@ function ext_control_check_addr(pc : xlenbits) -> Ext_Control_Check(ext_control_
   Ext_Control_OK(pc)
 
 /* the control address is derived from the PC register, e.g. in JAL */
-function ext_control_check_pc(pc : xlenbits) -> Ext_Control_Check(ext_control_error) =
+function ext_control_check_pc(pc : xlenbits) -> Ext_Control_Check(ext_control_error) = {
+  let _ = Ext_Control_Error();  /* FIXME: workaround for C backend */
   Ext_Control_OK(pc)
+}
 
 function ext_handle_control_check_error(err : ext_control_error) -> unit =
   ()
