@@ -5,7 +5,7 @@
  */
 
 union FetchResult = {
-  F_Ext_Error : ext_fetch_error,           /* For extensions */
+  F_Ext_Error : ext_fetch_addr_error,      /* For extensions */
   F_Base      : word,                      /* Base ISA */
   F_RVC       : half,                      /* Compressed ISA */
   F_Error     : (ExceptionType, xlenbits)  /* standard exception and PC */
@@ -18,8 +18,8 @@ val fetch : unit -> FetchResult effect {escape, rmem, rreg, wmv, wmvt, wreg}
 function fetch() -> FetchResult =
   /* fetch PC check for extensions */
   match ext_fetch_check_pc(PC, PC) {
-    Ext_Fetch_Error(e)   => F_Ext_Error(e),
-    Ext_Fetch_OK(use_pc) => {
+    Ext_FetchAddr_Error(e)   => F_Ext_Error(e),
+    Ext_FetchAddr_OK(use_pc) => {
       if   (use_pc[0] != 0b0 | (use_pc[1] != 0b0 & (~ (haveRVC()))))
       then F_Error(E_Fetch_Addr_Align, PC)   /* should this be use_pc or PC? */
       else match translateAddr(use_pc, Execute, Instruction) {
@@ -38,8 +38,8 @@ function fetch() -> FetchResult =
                 /* fetch PC check for the next instruction granule */
                 PC_hi : xlenbits = PC + 2;
                 match ext_fetch_check_pc(PC, PC_hi) {
-                  Ext_Fetch_Error(e)      => F_Ext_Error(e),
-                    Ext_Fetch_OK(use_pc_hi) => {
+                  Ext_FetchAddr_Error(e)      => F_Ext_Error(e),
+                  Ext_FetchAddr_OK(use_pc_hi) => {
                     match translateAddr(use_pc_hi, Execute, Instruction) {
                       TR_Failure(e)     => F_Error(e, PC_hi), /* should this be use_pc_hi or PC_hi? */
                       TR_Address(ppchi) => {

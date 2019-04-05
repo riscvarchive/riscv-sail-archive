@@ -35,31 +35,31 @@ function pcc_access_system_regs () = PCC.access_system_regs
 
 /* CHERI fetch address checks */
 
-type ext_fetch_error = CapEx
+type ext_fetch_addr_error = CapEx
 
-val ext_fetch_check_pc : (xlenbits, xlenbits) -> Ext_Fetch_Check(ext_fetch_error) effect {rreg}
+val ext_fetch_check_pc : (xlenbits, xlenbits) -> Ext_FetchAddr_Check(ext_fetch_addr_error) effect {rreg}
 function ext_fetch_check_pc(start_pc, pc) = {
   if   start_pc == pc
   then {
     /* We need to perform the permission checks only for the first granule. */
     if      not(PCC.tag)
-    then    Ext_Fetch_Error(CapEx_TagViolation)
+    then    Ext_FetchAddr_Error(CapEx_TagViolation)
     else if PCC.sealed
-    then    Ext_Fetch_Error(CapEx_SealViolation)
+    then    Ext_FetchAddr_Error(CapEx_SealViolation)
     else if not(PCC.permit_execute)
-    then    Ext_Fetch_Error(CapEx_PermitExecuteViolation)
+    then    Ext_FetchAddr_Error(CapEx_PermitExecuteViolation)
     else if not(inCapBounds(PCC, pc, 2))
-    then    Ext_Fetch_Error(CapEx_LengthViolation)
-    else    Ext_Fetch_OK(pc)
+    then    Ext_FetchAddr_Error(CapEx_LengthViolation)
+    else    Ext_FetchAddr_OK(pc)
   } else {
     /* Perform only the bounds checks on the current granule, i.e. pc. */
     if      not(inCapBounds(PCC, pc, 2))
-    then    Ext_Fetch_Error(CapEx_LengthViolation)
-    else    Ext_Fetch_OK(pc)
+    then    Ext_FetchAddr_Error(CapEx_LengthViolation)
+    else    Ext_FetchAddr_OK(pc)
   }
 }
 
-function ext_handle_fetch_check_error(e : ext_fetch_error) -> unit = {
+function ext_handle_fetch_check_error(e : ext_fetch_addr_error) -> unit = {
   /* FIXME: check if we can avoid the ignored boolean return */
   /* FIXME: rename to be more risc-v friendly? */
   let _ = raise_c2_exception_pcc(e);
@@ -68,10 +68,10 @@ function ext_handle_fetch_check_error(e : ext_fetch_error) -> unit = {
 
 /* CHERI control address checks */
 
-type ext_control_error = (CapEx, bits(6)) // FIXME: use a type name for bits(6)
+type ext_control_addr_error = (CapEx, bits(6)) // FIXME: use a type name for bits(6)
 
 /* the control address is derived from a non-PC register, e.g. in JALR */
-function ext_control_check_addr(pc : xlenbits) -> Ext_Control_Check(ext_control_error) = {
+function ext_control_check_addr(pc : xlenbits) -> Ext_ControlAddr_Check(ext_control_addr_error) = {
   let pcc_base = getCapBaseBits(PCC);
   /* We are given the addr without any bit[0] clearing, so the addition
    * below may include a set addr[0], and so the bounds checks should
@@ -79,18 +79,18 @@ function ext_control_check_addr(pc : xlenbits) -> Ext_Control_Check(ext_control_
    */
   let target : xlenbits = (pcc_base + pc)[63 .. 1] @ 0b0;
   if   not(inCapBounds(PCC, target, 4 /* FIXME-BAD: min_instruction_bytes () */))
-  then Ext_Control_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
-  else Ext_Control_OK(target)
+  then Ext_ControlAddr_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
+  else Ext_ControlAddr_OK(target)
 }
 
 /* the control address is derived from the PC register, e.g. in JAL */
-function ext_control_check_pc(pc : xlenbits) -> Ext_Control_Check(ext_control_error) = {
+function ext_control_check_pc(pc : xlenbits) -> Ext_ControlAddr_Check(ext_control_addr_error) = {
   if   not(inCapBounds(PCC, pc, 4 /* FIXME-BAD: min_instruction_bytes () */))
-  then Ext_Control_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
-  else Ext_Control_OK(pc)
+  then Ext_ControlAddr_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
+  else Ext_ControlAddr_OK(pc)
 }
 
-function ext_handle_control_check_error(err : ext_control_error) -> unit = {
+function ext_handle_control_check_error(err : ext_control_addr_error) -> unit = {
   let (capEx, regnum) = err;
   /* FIXME: check if we can avoid the ignored boolean return */
   /* FIXME: rename to be more risc-v friendly? */

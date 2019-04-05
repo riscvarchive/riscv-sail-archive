@@ -10,11 +10,11 @@ function clause execute (RISCV_JALR(imm, rs1, rd)) = {
   let t : xlenbits = X(rs1) + EXTS(imm);
   /* Extensions get the first checks on the prospective target address. */
   match ext_control_check_addr(t) {
-    Ext_Control_Error(e) => {
+    Ext_ControlAddr_Error(e) => {
       ext_handle_control_check_error(e);
       false
     },
-    Ext_Control_OK(addr) => {
+    Ext_ControlAddr_OK(addr) => {
       let  target = [addr with 0 = bitzero];  /* clear addr[0] */
       if   target[1] & (~ (haveRVC()))
       then {

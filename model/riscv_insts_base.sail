@@ -53,11 +53,11 @@ function clause execute (RISCV_JAL(imm, rd)) = {
   let t : xlenbits = PC + EXTS(imm);
   /* Extensions get the first checks on the prospective target address. */
   match ext_control_check_pc(t) {
-    Ext_Control_Error(e) => {
+    Ext_ControlAddr_Error(e) => {
       ext_handle_control_check_error(e);
       false
     },
-    Ext_Control_OK(target) => {
+    Ext_ControlAddr_OK(target) => {
       /* Perform standard alignment check */
       if   target[1] & (~ (haveRVC()))
       then {

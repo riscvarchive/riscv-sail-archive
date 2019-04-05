@@ -1,6 +1,6 @@
 /* default fetch address checks */
 
-type ext_fetch_error = unit
+type ext_fetch_addr_error = unit
 
 /* Since fetch is done in granules, the check function gets two arguments:
  * start_pc: the PC at the start of the current fetch sequence
@@ -10,15 +10,15 @@ type ext_fetch_error = unit
  *           any address translation errors are reported for pc, not the returned value.
  *           FIXME: Would this be the generally desired behaviour?
  */
-function ext_fetch_check_pc(start_pc : xlenbits, pc : xlenbits) -> Ext_Fetch_Check(ext_fetch_error) =
-  Ext_Fetch_OK(pc)
+function ext_fetch_check_pc(start_pc : xlenbits, pc : xlenbits) -> Ext_FetchAddr_Check(ext_fetch_addr_error) =
+  Ext_FetchAddr_OK(pc)
 
-function ext_handle_fetch_check_error(err : ext_fetch_error) -> unit =
+function ext_handle_fetch_check_error(err : ext_fetch_addr_error) -> unit =
   ()
 
 /* default control address checks */
 
-type ext_control_error = unit
+type ext_control_addr_error = unit
 
 /* these functions return the address to use as the target for
  * the control transfer.  any address translation or other errors
@@ -32,14 +32,14 @@ type ext_control_error = unit
  */
 
 /* the control address is derived from a non-PC register, e.g. in JALR */
-function ext_control_check_addr(pc : xlenbits) -> Ext_Control_Check(ext_control_error) =
-  Ext_Control_OK(pc)
+function ext_control_check_addr(pc : xlenbits) -> Ext_ControlAddr_Check(ext_control_addr_error) =
+  Ext_ControlAddr_OK(pc)
 
 /* the control address is derived from the PC register, e.g. in JAL */
-function ext_control_check_pc(pc : xlenbits) -> Ext_Control_Check(ext_control_error) =
-  Ext_Control_OK(pc)
+function ext_control_check_pc(pc : xlenbits) -> Ext_ControlAddr_Check(ext_control_addr_error) =
+  Ext_ControlAddr_OK(pc)
 
-function ext_handle_control_check_error(err : ext_control_error) -> unit =
+function ext_handle_control_check_error(err : ext_control_addr_error) -> unit =
   ()
 
 /* accessors for default architectural addresses, for use from within instructions */
