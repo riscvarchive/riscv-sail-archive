@@ -798,12 +798,12 @@ int main(int argc, char **argv)
 #ifndef RVFI_DII
   } while (0);
 #else
-    model_fini();
     if (rvfi_dii) {
       /* Reset for next test */
       init_sail(entry);
     }
   } while (rvfi_dii);
 #endif
+  model_fini();
   flush_logs();
 }
