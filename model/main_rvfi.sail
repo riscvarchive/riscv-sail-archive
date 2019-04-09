@@ -79,7 +79,7 @@ function rvfi_step(step_no) = {
         }
       }
     };
-  PC = nextPC;
+  tick_pc();
   rvfi_exec->rvfi_pc_wdata() = PC;
 //print_rvfi_exec();
   if retired then retire_instruction();
