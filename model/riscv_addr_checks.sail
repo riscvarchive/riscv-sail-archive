@@ -54,6 +54,7 @@ function ext_handle_data_check_error(err : ext_data_addr_error) -> unit =
 
 /* accessors for default architectural addresses, for use from within instructions */
 /* FIXME: these don't really belong in this file. */
+/* FIXME: see note in cheri_addr_checks.sail */
 
 val get_next_pc : unit -> xlenbits effect {rreg}
 function get_next_pc() = nextPC

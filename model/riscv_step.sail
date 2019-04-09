@@ -4,13 +4,6 @@
  * to check PC validity *before* standard fetch processing checks.
  */
 
-union FetchResult = {
-  F_Ext_Error : ext_fetch_addr_error,      /* For extensions */
-  F_Base      : word,                      /* Base ISA */
-  F_RVC       : half,                      /* Compressed ISA */
-  F_Error     : (ExceptionType, xlenbits)  /* standard exception and PC */
-}
-
 function isRVC(h : half) -> bool =
  ~ (h[1 .. 0] == 0b11)
 
@@ -71,6 +64,8 @@ function step(step_no) = {
         (false, false)
       },
       None() => {
+        let f : FetchResult = fetch();
+        ext_fetch_hook(f);
         match fetch() {
           /* extension error */
           F_Ext_Error(e)   => {
@@ -132,8 +127,14 @@ function loop () = {
   i : int = 0;
   step_no : int = 0;
   while (~ (htif_done)) do {
+    /* for step extensions */
+    ext_pre_step_hook();
+
     let stepped = step(step_no);
     if stepped then step_no = step_no + 1;
+
+    /* for step extensions */
+    ext_post_step_hook();
 
     /* check htif exit */
     if htif_done then {
