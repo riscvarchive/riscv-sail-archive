@@ -1,57 +1,5 @@
 /* The emulator fetch-execute-interrupt dispatch loop. */
 
-/* Current fetch hooks for RISC-V extensions call extensions
- * to check PC validity *before* standard fetch processing checks.
- */
-
-function isRVC(h : half) -> bool =
- ~ (h[1 .. 0] == 0b11)
-
-val fetch : unit -> FetchResult effect {escape, rmem, rreg, wmv, wmvt, wreg}
-function fetch() -> FetchResult =
-  /* fetch PC check for extensions */
-  match ext_fetch_check_pc(PC, PC) {
-    Ext_FetchAddr_Error(e)   => F_Ext_Error(e),
-    Ext_FetchAddr_OK(use_pc) => {
-      if   (use_pc[0] != 0b0 | (use_pc[1] != 0b0 & (~ (haveRVC()))))
-      then F_Error(E_Fetch_Addr_Align, PC)   /* should this be use_pc or PC? */
-      else match translateAddr(use_pc, Execute, Instruction) {
-        TR_Failure(e)     => F_Error(e, PC), /* should this be use_pc or PC? */
-        TR_Address(ppclo) => {
-          /* split instruction fetch into 16-bit granules to handle RVC, as
-           * well as to generate precise fault addresses in any fetch
-           * exceptions.
-           */
-          match checked_mem_read(Instruction, ppclo, 2, false, false, false) {
-            MemException(e) => F_Error(E_Fetch_Access_Fault, PC), /* should this be use_pc or PC? */
-            MemValue(ilo)   => {
-              if   isRVC(ilo)
-              then F_RVC(ilo)
-              else {
-                /* fetch PC check for the next instruction granule */
-                PC_hi : xlenbits = PC + 2;
-                match ext_fetch_check_pc(PC, PC_hi) {
-                  Ext_FetchAddr_Error(e)      => F_Ext_Error(e),
-                  Ext_FetchAddr_OK(use_pc_hi) => {
-                    match translateAddr(use_pc_hi, Execute, Instruction) {
-                      TR_Failure(e)     => F_Error(e, PC_hi), /* should this be use_pc_hi or PC_hi? */
-                      TR_Address(ppchi) => {
-                        match checked_mem_read(Instruction, ppchi, 2, false, false, false) {
-                          MemException(e) => F_Error(E_Fetch_Access_Fault, PC_hi),  /* should this be use_pc_hi or PC_hi? */
-                          MemValue(ihi)   => F_Base(append(ihi, ilo))
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
 /* returns whether to increment the step count in the trace */
 val step : int -> bool effect {barr, eamem, escape, exmem, rmem, rreg, wmv, wmvt, wreg}
 function step(step_no) = {
@@ -64,9 +12,9 @@ function step(step_no) = {
         (false, false)
       },
       None() => {
-        let f : FetchResult = fetch();
-        ext_fetch_hook(f);
-        match fetch() {
+        /* the extension hook interposes on the fetch result */
+        let f : FetchResult = ext_fetch_hook(fetch());
+        match f {
           /* extension error */
           F_Ext_Error(e)   => {
             ext_handle_fetch_check_error(e);
@@ -88,13 +36,13 @@ function step(step_no) = {
               },
               Some(ast) => {
                 print_instr("[" ^ string_of_int(step_no) ^ "] [" ^ cur_privilege ^ "]: " ^ BitStr(PC) ^ " (" ^ BitStr(h) ^ ") " ^ ast);
-		/* check for RVC once here instead of every RVC execute clause. */
-		if haveRVC() then {
+                /* check for RVC once here instead of every RVC execute clause. */
+                if haveRVC() then {
                   nextPC = PC + 2;
                   (execute(ast), true)
-		} else {
-		  (false, true)
-		}
+                } else {
+                  (false, true)
+                }
               }
             }
           },
