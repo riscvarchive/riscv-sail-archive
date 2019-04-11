@@ -72,7 +72,7 @@ function step(step_no) = {
 
   /* for step extensions */
   ext_post_step_hook();
-  
+
   stepped
 }
 
