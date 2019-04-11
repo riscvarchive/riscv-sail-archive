@@ -3,6 +3,9 @@
 /* returns whether to increment the step count in the trace */
 val step : int -> bool effect {barr, eamem, escape, exmem, rmem, rreg, wmv, wmvt, wreg}
 function step(step_no) = {
+  /* for step extensions */
+  ext_pre_step_hook();
+
   minstret_written = false;     /* see note for minstret */
   let (retired, stepped) : (bool, bool) =
     match dispatchInterrupt(cur_privilege) {
@@ -66,6 +69,10 @@ function step(step_no) = {
     };
   tick_pc();
   if retired then retire_instruction();
+
+  /* for step extensions */
+  ext_post_step_hook();
+  
   stepped
 }
 
@@ -75,14 +82,8 @@ function loop () = {
   i : int = 0;
   step_no : int = 0;
   while (~ (htif_done)) do {
-    /* for step extensions */
-    ext_pre_step_hook();
-
     let stepped = step(step_no);
     if stepped then step_no = step_no + 1;
-
-    /* for step extensions */
-    ext_post_step_hook();
 
     /* check htif exit */
     if htif_done then {
