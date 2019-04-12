@@ -44,6 +44,7 @@ function step(step_no) = {
                   nextPC = PC + 2;
                   (execute(ast), true)
                 } else {
+                  handle_illegal();
                   (false, true)
                 }
               }
