@@ -79,14 +79,14 @@ function ext_control_check_addr(pc : xlenbits) -> Ext_ControlAddr_Check(ext_cont
    * be accurate.
    */
   let target : xlenbits = (pcc_base + pc)[63 .. 1] @ 0b0;
-  if   not(inCapBounds(PCC, target, 4 /* FIXME-BAD: min_instruction_bytes () */))
+  if   not(inCapBounds(PCC, target, min_instruction_bytes ()))
   then Ext_ControlAddr_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
   else Ext_ControlAddr_OK(target)
 }
 
 /* the control address is derived from the PC register, e.g. in JAL */
 function ext_control_check_pc(pc : xlenbits) -> Ext_ControlAddr_Check(ext_control_addr_error) = {
-  if   not(inCapBounds(PCC, pc, 4 /* FIXME-BAD: min_instruction_bytes () */))
+  if   not(inCapBounds(PCC, pc, min_instruction_bytes ()))
   then Ext_ControlAddr_Error(CapEx_LengthViolation, 0b100000)  // FIXME: use a name for this cap_idx
   else Ext_ControlAddr_OK(pc)
 }
