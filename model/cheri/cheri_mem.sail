@@ -27,10 +27,9 @@ function mem_read_cap (addr, aq, rl, res) = {
 
 val mem_write_ea_cap : (xlenbits, bool, bool, bool) -> MemoryOpResult(unit) effect {eamem}
 function mem_write_ea_cap(addr, aq, rl, con) = {
-  /* FIXME: can we reuse mem_write_ea here? */
   if   ~(is_aligned_addr(addr, cap_size))
   then MemException(E_SAMO_Addr_Align)
-  else MemValue(MEMea(addr, cap_size))
+  else MemValue(__write_mem_ea(Write_plain, addr, cap_size)) // FIXME: is Write_plain correct?
 }
 
 val mem_write_cap : (xlenbits, Capability, bool, bool, bool) -> MemoryOpResult(bool) effect {wmv, rreg, wreg, escape, wmvt}

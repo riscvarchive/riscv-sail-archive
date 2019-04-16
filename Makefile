@@ -294,15 +294,27 @@ endif
 generated_definitions/coq/$(ARCH)/riscv.vo: generated_definitions/coq/$(ARCH)/riscv_types.vo handwritten_support/riscv_extras.vo
 generated_definitions/coq/$(ARCH)/riscv_duopod.vo: generated_definitions/coq/$(ARCH)/riscv_duopod_types.vo handwritten_support/riscv_extras.vo
 
-riscv_rmem: generated_definitions/lem-for-rmem/riscv.lem
+echo_rmem_srcs:
+	echo $(SAIL_RMEM_SRCS)
+
+riscv_rmem: generated_definitions/for-rmem/riscv.lem
+riscv_rmem: generated_definitions/for-rmem/riscv_toFromInterp2.ml
+riscv_rmem: generated_definitions/for-rmem/riscv.defs
 .PHONY: riscv_rmem
 
-generated_definitions/lem-for-rmem/riscv.lem: SAIL_FLAGS += -lem_lib Riscv_extras
-generated_definitions/lem-for-rmem/riscv.lem: $(SAIL_RMEM_SRCS)
+generated_definitions/for-rmem/riscv.lem: SAIL_FLAGS += -lem_lib Riscv_extras
+generated_definitions/for-rmem/riscv.lem: $(SAIL_RMEM_SRCS)
 	mkdir -p $(dir $@)
 #	We do not need the isabelle .thy files, but sail always generates them
 	$(SAIL) $(SAIL_FLAGS) -lem -lem_mwords -lem_output_dir $(dir $@) -isa_output_dir $(dir $@) -o $(notdir $(basename $@)) $^
 
+generated_definitions/for-rmem/riscv_toFromInterp2.ml: $(SAIL_RMEM_SRCS)
+	mkdir -p $(dir $@)
+	$(SAIL) $(SAIL_FLAGS) -tofrominterp -tofrominterp_lem -tofrominterp_output_dir $(dir $@) -o riscv $^
+
+generated_definitions/for-rmem/riscv.defs: $(SAIL_RMEM_SRCS)
+	mkdir -p $(dir $@)
+	$(SAIL) $(SAIL_FLAGS) -marshal -o $(basename $@) $^
 
 # we exclude prelude.sail here, most code there should move to sail lib
 #LOC_FILES:=$(SAIL_SRCS) main.sail
@@ -311,7 +323,7 @@ generated_definitions/lem-for-rmem/riscv.lem: $(SAIL_RMEM_SRCS)
 clean:
 	-rm -rf generated_definitions/ocaml/* generated_definitions/c/* generated_definitions/latex/*
 	-rm -rf generated_definitions/lem/* generated_definitions/isabelle/* generated_definitions/hol4/* generated_definitions/coq/*
-	-rm -rf generated_definitions/lem-for-rmem/*
+	-rm -rf generated_definitions/for-rmem/*
 	-rm -f c_emulator/riscv_sim_RV32 c_emulator/riscv_sim_RV64  c_emulator/riscv_rvfi
 	-rm -rf ocaml_emulator/_sbuild ocaml_emulator/_build ocaml_emulator/riscv_ocaml_sim_RV32 ocaml_emulator/riscv_ocaml_sim_RV64 ocaml_emulator/tracecmp
 	-rm -f *.gcno *.gcda
