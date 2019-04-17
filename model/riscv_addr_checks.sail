@@ -8,7 +8,6 @@ type ext_fetch_addr_error = unit
  *
  * returns:  the *virtual* memory address to use for the fetch.
  *           any address translation errors are reported for pc, not the returned value.
- *           FIXME: Would this be the generally desired behaviour?
  */
 function ext_fetch_check_pc(start_pc : xlenbits, pc : xlenbits) -> Ext_FetchAddr_Check(ext_fetch_addr_error) =
   Ext_FetchAddr_OK(pc)
@@ -27,8 +26,6 @@ type ext_control_addr_error = unit
  * NOTE: the input value does *not* have bit[0] set to 0, to enable
  * more accurate bounds checking.  There is no constraint on the output
  * value, which will have bit[0] cleared by the caller if needed.
- *
- * FIXME: Would this be the generally desired behaviour?
  */
 
 /* the control address is derived from a non-PC register, e.g. in JALR */

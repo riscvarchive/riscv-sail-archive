@@ -34,8 +34,6 @@ val vector_concat = {ocaml: "append", lem: "append_list"} : forall ('n : Int) ('
 
 overload append = {vector_concat}
 
-val not_vec = {c: "not_bits", _: "not_vec"} : forall 'n. bits('n) -> bits('n)
-
 overload ~ = {not_bool, not_vec}
 
 val neq_vec = {lem: "neq"} : forall 'n. (bits('n), bits('n)) -> bool
@@ -48,16 +46,9 @@ function neq_anything (x, y) = not_bool(x == y)
 
 overload operator != = {neq_vec, neq_anything}
 
-val and_vec = {lem: "and_vec", c: "and_bits", coq: "and_vec", ocaml: "and_vec", interpreter: "and_vec"} : forall 'n. (bits('n), bits('n)) -> bits('n)
-
 overload operator & = {and_vec}
 
-val or_vec = {lem: "or_vec", c: "or_bits", coq: "or_vec", ocaml: "or_vec", interpreter: "or_vec"} : forall 'n. (bits('n), bits('n)) -> bits('n)
-
 overload operator | = {or_vec}
-
-val "shiftl" : forall 'm. (bits('m), int) -> bits('m)
-val "shiftr" : forall 'm. (bits('m), int) -> bits('m)
 
 val cast cast_unit_vec : bit -> bits(1)
 
