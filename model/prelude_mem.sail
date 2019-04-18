@@ -14,7 +14,7 @@ function write_ram(wk, addr, width, data, meta) = {
    * FIXME: We should convert the external API to consume
    * the value along with the metadata to ensure atomicity.
    */
-  let ret : bool = __write_mem(wk, addr, width, data);
+  let ret : bool = __write_mem(wk, sizeof(xlen), addr, width, data);
   if ret then __WriteRAM_Meta(addr, width, meta);
   ret
 }
