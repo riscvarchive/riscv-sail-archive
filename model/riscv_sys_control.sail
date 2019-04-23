@@ -379,7 +379,7 @@ function handle_exception(cur_priv : Privilege, ctl : ctl_result,
       mstatus->SIE()  = mstatus.SPIE();
       mstatus->SPIE() = true;
       cur_privilege   = if mstatus.SPP() == true then Supervisor else User;
-      /* S-mode implies that U-mode is supported (issue #331 on riscv-isa-manual). */
+      /* S-mode implies that U-mode is supported (issue 331 on riscv-isa-manual). */
       mstatus->SPP()  = false;
 
       print_reg("CSR mstatus <- " ^ BitStr(mstatus.bits()));
