@@ -22,12 +22,22 @@ mapping clause assembly = C_ILLEGAL(s) <-> "c.illegal" ^ spc() ^ hex_bits_16(s)
 
 /* ****************************************************************** */
 
+/* The default implementation for unknown or undefined ast values:
+ * treat them as illegal instructions.
+ */
+
+function clause ext_execute (_) = {
+  handle_illegal();
+  false
+}
+
 /* End definitions */
 end ast
 end execute
 end assembly
 end encdec
 end encdec_compressed
+end ext_execute
 
 val cast print_insn : ast -> string
 function print_insn insn = assembly(insn)

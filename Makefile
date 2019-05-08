@@ -21,8 +21,8 @@ SAIL_DEFAULT_INST = riscv_insts_base.sail riscv_insts_aext.sail riscv_insts_cext
 SAIL_SEQ_INST  = $(SAIL_DEFAULT_INST) riscv_jalr_seq.sail
 SAIL_RMEM_INST = $(SAIL_DEFAULT_INST) riscv_jalr_rmem.sail riscv_insts_rmem.sail
 
-SAIL_SEQ_INST_SRCS  = riscv_insts_begin.sail $(SAIL_SEQ_INST) riscv_insts_end.sail
-SAIL_RMEM_INST_SRCS = riscv_insts_begin.sail $(SAIL_RMEM_INST) riscv_insts_end.sail
+SAIL_SEQ_INST_SRCS  = riscv_insts_begin.sail riscv_insts_helpers.sail $(SAIL_SEQ_INST) riscv_insts_end.sail
+SAIL_RMEM_INST_SRCS = riscv_insts_begin.sail riscv_insts_helpers.sail $(SAIL_RMEM_INST) riscv_insts_end.sail
 
 # System and platform sources
 SAIL_SYS_SRCS =  riscv_csr_map.sail

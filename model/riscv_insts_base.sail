@@ -291,28 +291,6 @@ union clause ast = LOAD : (bits(12), regbits, regbits, bool, word_width, bool, b
 mapping clause encdec = LOAD(imm, rs1, rd, is_unsigned, size, false, false) if size_bits(size) != 0b11 | not_bool(is_unsigned)
   <-> imm @ rs1 @ bool_bits(is_unsigned) @ size_bits(size) @ rd @ 0b0000011 if size_bits(size) != 0b11 | not_bool(is_unsigned)
 
-val extend_value : forall 'n, 0 < 'n <= xlen_bytes. (bool, MemoryOpResult(bits(8 * 'n))) -> MemoryOpResult(xlenbits)
-function extend_value(is_unsigned, value) = match (value) {
-  MemValue(v)     => MemValue(if is_unsigned then EXTZ(v) else EXTS(v) : xlenbits),
-  MemException(e) => MemException(e)
-}
-
-val process_load : forall 'n, 0 < 'n <= xlen_bytes. (regbits, xlenbits, MemoryOpResult(bits(8 * 'n)), bool) -> bool effect {escape, rreg, wreg}
-function process_load(rd, addr, value, is_unsigned) =
-  match extend_value(is_unsigned, value) {
-    MemValue(result) => { X(rd) = result; true },
-    MemException(e)  => { handle_mem_exception(addr, e); false }
-  }
-
-function check_misaligned(vaddr : xlenbits, width : word_width) -> bool =
-  if   plat_enable_misaligned_access() then false
-  else match width {
-         BYTE   => false,
-         HALF   => vaddr[0] == true,
-         WORD   => vaddr[0] == true | vaddr[1] == true,
-         DOUBLE => vaddr[0] == true | vaddr[1] == true | vaddr[2] == true
-       }
-
 function clause execute(LOAD(imm, rs1, rd, is_unsigned, width, aq, rl)) = {
   let offset : xlenbits = EXTS(imm);
   /* Get the address, X(rs1) + offset.
@@ -750,4 +728,3 @@ function clause execute SFENCE_VMA(rs1, rs2) = {
 
 mapping clause assembly = SFENCE_VMA(rs1, rs2)
   <-> "sfence.vma" ^ spc() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
-
