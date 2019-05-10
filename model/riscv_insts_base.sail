@@ -3,7 +3,7 @@
 
 
 /* ****************************************************************** */
-union clause ast = UTYPE : (bits(20), regbits, uop)
+union clause ast = UTYPE : (bits(20), regidx, uop)
 
 mapping encdec_uop : uop <-> bits(7) = {
   RISCV_LUI   <-> 0b0110111,
@@ -20,7 +20,7 @@ function clause execute UTYPE(imm, rd, op) = {
     RISCV_AUIPC => PC + off
   };
   X(rd) = ret;
-  true
+  RETIRE_SUCCESS
 }
 
 mapping utype_mnemonic : uop <-> string = {
@@ -32,7 +32,7 @@ mapping clause assembly = UTYPE(imm, rd, op)
   <-> utype_mnemonic(op) ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_20(imm)
 
 /* ****************************************************************** */
-union clause ast = RISCV_JAL : (bits(21), regbits)
+union clause ast = RISCV_JAL : (bits(21), regidx)
 
 mapping clause encdec = RISCV_JAL(imm_19 @ imm_7_0 @ imm_8 @ imm_18_13 @ imm_12_9 @ 0b0, rd)
   <-> imm_19 : bits(1) @ imm_18_13 : bits(6) @ imm_12_9 : bits(4) @ imm_8 : bits(1) @ imm_7_0 : bits(8) @ rd @ 0b1101111
@@ -55,18 +55,18 @@ function clause execute (RISCV_JAL(imm, rd)) = {
   match ext_control_check_pc(t) {
     Ext_ControlAddr_Error(e) => {
       ext_handle_control_check_error(e);
-      false
+      RETIRE_FAIL
     },
     Ext_ControlAddr_OK(target) => {
       /* Perform standard alignment check */
       if   target[1] & (~ (haveRVC()))
       then {
         handle_mem_exception(target, E_Fetch_Addr_Align);
-        false
+        RETIRE_FAIL
       } else {
         X(rd) = get_next_pc();
         set_next_pc(target);
-        true
+        RETIRE_SUCCESS
       }
     }
   }
@@ -78,7 +78,7 @@ mapping clause assembly = RISCV_JAL(imm, rd)
   <-> "jal" ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_21(imm)
 
 /* ****************************************************************** */
-union clause ast = RISCV_JALR : (bits(12), regbits, regbits)
+union clause ast = RISCV_JALR : (bits(12), regidx, regidx)
 
 mapping clause encdec = RISCV_JALR(imm, rs1, rd)
   <-> imm @ rs1 @ 0b000 @ rd @ 0b1100111
@@ -89,7 +89,7 @@ mapping clause assembly = RISCV_JALR(imm, rs1, rd)
 /* see riscv_jalr_seq.sail or riscv_jalr_rmem.sail for the execute clause. */
 
 /* ****************************************************************** */
-union clause ast = BTYPE : (bits(13), regbits, regbits, bop)
+union clause ast = BTYPE : (bits(13), regidx, regidx, bop)
 
 mapping encdec_bop : bop <-> bits(3) = {
   RISCV_BEQ  <-> 0b000,
@@ -120,19 +120,19 @@ function clause execute (BTYPE(imm, rs2, rs1, op)) = {
     match ext_control_check_pc(t) {
       Ext_ControlAddr_Error(e) => {
         ext_handle_control_check_error(e);
-        false
+        RETIRE_FAIL
       },
       Ext_ControlAddr_OK(target) => {
         if target[1] & (~ (haveRVC())) then {
           handle_mem_exception(target, E_Fetch_Addr_Align);
-          false;
+          RETIRE_FAIL;
         } else {
           set_next_pc(target);
-          true
+          RETIRE_SUCCESS
         }
       }
     }
-  } else true
+  } else RETIRE_SUCCESS
 }
 
 mapping btype_mnemonic : bop <-> string = {
@@ -148,7 +148,7 @@ mapping clause assembly = BTYPE(imm, rs2, rs1, op)
   <-> btype_mnemonic(op) ^ spc() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2) ^ sep() ^ hex_bits_13(imm)
 
 /* ****************************************************************** */
-union clause ast = ITYPE : (bits(12), regbits, regbits, iop)
+union clause ast = ITYPE : (bits(12), regidx, regidx, iop)
 
 mapping encdec_iop : iop <-> bits(3) = {
   RISCV_ADDI  <-> 0b000,
@@ -174,7 +174,7 @@ function clause execute (ITYPE (imm, rs1, rd, op)) = {
     RISCV_XORI  => rs1_val ^ immext
   };
   X(rd) = result;
-  true
+  RETIRE_SUCCESS
 }
 
 mapping itype_mnemonic : iop <-> string = {
@@ -190,7 +190,7 @@ mapping clause assembly = ITYPE(imm, rs1, rd, op)
   <-> itype_mnemonic(op) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_12(imm)
 
 /* ****************************************************************** */
-union clause ast = SHIFTIOP : (bits(6), regbits, regbits, sop)
+union clause ast = SHIFTIOP : (bits(6), regidx, regidx, sop)
 
 mapping encdec_sop : sop <-> bits(3) = {
   RISCV_SLLI <-> 0b001,
@@ -217,7 +217,7 @@ function clause execute (SHIFTIOP(shamt, rs1, rd, op)) = {
                   else shift_right_arith64(rs1_val, shamt)
   };
   X(rd) = result;
-  true
+  RETIRE_SUCCESS
 }
 
 mapping shiftiop_mnemonic : sop <-> string = {
@@ -230,7 +230,7 @@ mapping clause assembly = SHIFTIOP(shamt, rs1, rd, op)
   <-> shiftiop_mnemonic(op) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_6(shamt)
 
 /* ****************************************************************** */
-union clause ast = RTYPE : (regbits, regbits, regbits, rop)
+union clause ast = RTYPE : (regidx, regidx, regidx, rop)
 
 mapping clause encdec = RTYPE(rs2, rs1, rd, RISCV_ADD)  <-> 0b0000000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b0110011
 mapping clause encdec = RTYPE(rs2, rs1, rd, RISCV_SLT)  <-> 0b0000000 @ rs2 @ rs1 @ 0b010 @ rd @ 0b0110011
@@ -265,7 +265,7 @@ function clause execute (RTYPE(rs2, rs1, rd, op)) = {
                   else shift_right_arith64(rs1_val, rs2_val[5..0])
   };
   X(rd) = result;
-  true
+  RETIRE_SUCCESS
 }
 
 mapping rtype_mnemonic : rop <-> string = {
@@ -285,7 +285,7 @@ mapping clause assembly = RTYPE(rs2, rs1, rd, op)
   <-> rtype_mnemonic(op) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 /* ****************************************************************** */
-union clause ast = LOAD : (bits(12), regbits, regbits, bool, word_width, bool, bool)
+union clause ast = LOAD : (bits(12), regidx, regidx, bool, word_width, bool, bool)
 
 /* Load unsigned double is only present in RV128I, not RV64I */
 mapping clause encdec = LOAD(imm, rs1, rd, is_unsigned, size, false, false) if size_bits(size) != 0b11 | not_bool(is_unsigned)
@@ -296,12 +296,12 @@ function clause execute(LOAD(imm, rs1, rd, is_unsigned, width, aq, rl)) = {
   /* Get the address, X(rs1) + offset.
      Some extensions perform additional checks on address validity. */
   match ext_data_get_addr(rs1, offset, Read, Data, width) {
-    Ext_DataAddr_Error(e)  => { ext_handle_data_check_error(e); false },
+    Ext_DataAddr_Error(e)  => { ext_handle_data_check_error(e); RETIRE_FAIL },
     Ext_DataAddr_OK(vaddr) =>
       if   check_misaligned(vaddr, width)
-      then { handle_mem_exception(vaddr, E_Load_Addr_Align); false }
+      then { handle_mem_exception(vaddr, E_Load_Addr_Align); RETIRE_FAIL }
       else match translateAddr(vaddr, Read, Data) {
-        TR_Failure(e) => { handle_mem_exception(vaddr, e); false },
+        TR_Failure(e) => { handle_mem_exception(vaddr, e); RETIRE_FAIL },
         TR_Address(addr) =>
           match (width, sizeof(xlen)) {
             (BYTE, _)   =>
@@ -336,10 +336,10 @@ mapping maybe_u = {
 }
 
 mapping clause assembly = LOAD(imm, rs1, rd, is_unsigned, size, aq, rl)
-  <-> "l" ^ size_mnemonic(size) ^ maybe_u(is_unsigned) ^ maybe_aq(aq) ^ maybe_rl(rl) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_12(imm)
+  <-> "l" ^ size_mnemonic(size) ^ maybe_u(is_unsigned) ^ maybe_aq(aq) ^ maybe_rl(rl) ^ spc() ^ reg_name(rd) ^ sep() ^ hex_bits_12(imm) ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"
 
 /* ****************************************************************** */
-union clause ast = STORE : (bits(12), regbits, regbits, word_width, bool, bool)
+union clause ast = STORE : (bits(12), regidx, regidx, word_width, bool, bool)
 
 mapping clause encdec = STORE(imm7 @ imm5, rs2, rs1, size, false, false)
   <-> imm7 : bits(7) @ rs2 @ rs1 @ 0b0 @ size_bits(size) @ imm5 : bits(5) @ 0b0100011
@@ -351,12 +351,12 @@ function clause execute (STORE(imm, rs2, rs1, width, aq, rl)) = {
   /* Get the address, X(rs1) + offset.
      Some extensions perform additional checks on address validity. */
   match ext_data_get_addr(rs1, offset, Write, Data, width) {
-    Ext_DataAddr_Error(e)  => { ext_handle_data_check_error(e); false },
+    Ext_DataAddr_Error(e)  => { ext_handle_data_check_error(e); RETIRE_FAIL },
     Ext_DataAddr_OK(vaddr) =>
       if   check_misaligned(vaddr, width)
-      then { handle_mem_exception(vaddr, E_SAMO_Addr_Align); false }
+      then { handle_mem_exception(vaddr, E_SAMO_Addr_Align); RETIRE_FAIL }
       else match translateAddr(vaddr, Write, Data) {
-        TR_Failure(e)    => { handle_mem_exception(vaddr, e); false },
+        TR_Failure(e)    => { handle_mem_exception(vaddr, e); RETIRE_FAIL },
         TR_Address(addr) => {
           let eares : MemoryOpResult(unit) = match width {
             BYTE   => mem_write_ea(addr, 1, aq, rl, false),
@@ -365,7 +365,7 @@ function clause execute (STORE(imm, rs2, rs1, width, aq, rl)) = {
             DOUBLE => mem_write_ea(addr, 8, aq, rl, false)
           };
           match (eares) {
-            MemException(e) => { handle_mem_exception(addr, e); false },
+            MemException(e) => { handle_mem_exception(addr, e); RETIRE_FAIL },
             MemValue(_) => {
               let rs2_val = X(rs2);
               let res : MemoryOpResult(bool) = match (width, sizeof(xlen)) {
@@ -375,9 +375,9 @@ function clause execute (STORE(imm, rs2, rs1, width, aq, rl)) = {
                 (DOUBLE, 64) => mem_write_value(addr, 8, rs2_val,        aq, rl, false)
               };
               match (res) {
-                MemValue(true)  => true,
+                MemValue(true)  => RETIRE_SUCCESS,
                 MemValue(false) => internal_error("store got false from mem_write_value"),
-                MemException(e) => { handle_mem_exception(addr, e); false }
+                MemException(e) => { handle_mem_exception(addr, e); RETIRE_FAIL }
               }
             }
           }
@@ -386,11 +386,11 @@ function clause execute (STORE(imm, rs2, rs1, width, aq, rl)) = {
   }
 }
 
-mapping clause assembly = STORE(imm, rs1, rd, size, aq, rl)
-  <-> "s" ^ size_mnemonic(size) ^ maybe_aq(aq) ^ maybe_rl(rl) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_12(imm)
+mapping clause assembly = STORE(imm, rs2, rs1, size, aq, rl)
+  <-> "s" ^ size_mnemonic(size) ^ maybe_aq(aq) ^ maybe_rl(rl) ^ spc() ^ reg_name(rs2) ^ sep() ^ hex_bits_12(imm) ^ opt_spc() ^ "(" ^ opt_spc() ^ reg_name(rs1) ^ opt_spc() ^ ")"
 
 /* ****************************************************************** */
-union clause ast = ADDIW : (bits(12), regbits, regbits)
+union clause ast = ADDIW : (bits(12), regidx, regidx)
 
 mapping clause encdec = ADDIW(imm, rs1, rd)
       if sizeof(xlen) == 64
@@ -400,7 +400,7 @@ mapping clause encdec = ADDIW(imm, rs1, rd)
 function clause execute (ADDIW(imm, rs1, rd)) = {
   let result : xlenbits = EXTS(imm) + X(rs1);
   X(rd) = EXTS(result[31..0]);
-  true
+  RETIRE_SUCCESS
 }
 
 mapping clause assembly = ADDIW(imm, rs1, rd)
@@ -409,7 +409,7 @@ mapping clause assembly = ADDIW(imm, rs1, rd)
       if sizeof(xlen) == 64
 
 /* ****************************************************************** */
-union clause ast = SHIFTW : (bits(5), regbits, regbits, sop)
+union clause ast = SHIFTW : (bits(5), regidx, regidx, sop)
 
 mapping clause encdec = SHIFTW(shamt, rs1, rd, RISCV_SLLI)
       if sizeof(xlen) == 64
@@ -432,7 +432,7 @@ function clause execute (SHIFTW(shamt, rs1, rd, op)) = {
     RISCV_SRAI => shift_right_arith32(rs1_val, shamt)
   };
   X(rd) = EXTS(result);
-  true
+  RETIRE_SUCCESS
 }
 
 mapping shiftw_mnemonic : sop <-> string = {
@@ -447,7 +447,7 @@ mapping clause assembly = SHIFTW(shamt, rs1, rd, op)
       if sizeof(xlen) == 64
 
 /* ****************************************************************** */
-union clause ast = RTYPEW : (regbits, regbits, regbits, ropw)
+union clause ast = RTYPEW : (regidx, regidx, regidx, ropw)
 
 mapping clause encdec = RTYPEW(rs2, rs1, rd, RISCV_ADDW)
       if sizeof(xlen) == 64
@@ -481,7 +481,7 @@ function clause execute (RTYPEW(rs2, rs1, rd, op)) = {
     RISCV_SRAW => shift_right_arith32(rs1_val, rs2_val[4..0])
   };
   X(rd) = EXTS(result);
-  true
+  RETIRE_SUCCESS
 }
 
 mapping rtypew_mnemonic : ropw <-> string = {
@@ -498,7 +498,7 @@ mapping clause assembly = RTYPEW(rs2, rs1, rd, op)
       if sizeof(xlen) == 64
 
 /* ****************************************************************** */
-union clause ast = SHIFTIWOP : (bits(5), regbits, regbits, sopw)
+union clause ast = SHIFTIWOP : (bits(5), regidx, regidx, sopw)
 
 mapping clause encdec = SHIFTIWOP(shamt, rs1, rd, RISCV_SLLIW)
       if sizeof(xlen) == 64
@@ -521,7 +521,7 @@ function clause execute (SHIFTIWOP(shamt, rs1, rd, op)) = {
     RISCV_SRAIW => shift_right_arith32(rs1_val[31..0], shamt)
   };
   X(rd) = EXTS(result);
-  true
+  RETIRE_SUCCESS
 }
 
 mapping shiftiwop_mnemonic : sopw <-> string = {
@@ -558,7 +558,7 @@ function clause execute (FENCE(pred, succ)) = {
     _ => { print("FIXME: unsupported fence");
            () }
   };
-  true
+  RETIRE_SUCCESS
 }
 
 mapping bit_maybe_r : bits(1) <-> string = {
@@ -602,7 +602,7 @@ function clause execute (FENCE_TSO(pred, succ)) = {
     _ => { print("FIXME: unsupported fence");
            () }
   };
-  true
+  RETIRE_SUCCESS
 }
 
 mapping clause assembly = FENCE_TSO(pred, succ)
@@ -615,7 +615,7 @@ mapping clause encdec = FENCEI()
   <-> 0b000000000000 @ 0b00000 @ 0b001 @ 0b00000 @ 0b0001111
 
 /* fence.i is a nop for the memory model */
-function clause execute FENCEI() = { /* __barrier(Barrier_RISCV_i); */ true }
+function clause execute FENCEI() = { /* __barrier(Barrier_RISCV_i); */ RETIRE_SUCCESS }
 
 mapping clause assembly = FENCEI() <-> "fence.i"
 
@@ -635,7 +635,7 @@ function clause execute ECALL() = {
              excinfo = (None() : option(xlenbits)),
              ext     = None() };
   set_next_pc(exception_handler(cur_privilege, CTL_TRAP(t), PC));
-  false
+  RETIRE_FAIL
 }
 
 mapping clause assembly = ECALL() <-> "ecall"
@@ -650,7 +650,7 @@ function clause execute MRET() = {
   if   cur_privilege == Machine
   then set_next_pc(exception_handler(cur_privilege, CTL_MRET(), PC))
   else handle_illegal();
-  false
+  RETIRE_FAIL
 }
 
 mapping clause assembly = MRET() <-> "mret"
@@ -671,7 +671,7 @@ function clause execute SRET() = {
                   then handle_illegal()
                   else set_next_pc(exception_handler(cur_privilege, CTL_SRET(), PC))
   };
-  false
+  RETIRE_FAIL
 }
 
 mapping clause assembly = SRET() <-> "sret"
@@ -684,7 +684,7 @@ mapping clause encdec = EBREAK()
 
 function clause execute EBREAK() = {
   handle_mem_exception(PC, E_Breakpoint);
-  false
+  RETIRE_FAIL
 }
 
 mapping clause assembly = EBREAK() <-> "ebreak"
@@ -697,17 +697,17 @@ mapping clause encdec = WFI()
 
 function clause execute WFI() =
   match cur_privilege {
-    Machine    => { platform_wfi(); true },
+    Machine    => { platform_wfi(); RETIRE_SUCCESS },
     Supervisor => if   mstatus.TW() == true
-                  then { handle_illegal(); false }
-                  else { platform_wfi(); true },
-    User       => { handle_illegal(); false }
+                  then { handle_illegal(); RETIRE_FAIL }
+                  else { platform_wfi(); RETIRE_SUCCESS },
+    User       => { handle_illegal(); RETIRE_FAIL }
   }
 
 mapping clause assembly = WFI() <-> "wfi"
 
 /* ****************************************************************** */
-union clause ast = SFENCE_VMA : (regbits, regbits)
+union clause ast = SFENCE_VMA : (regidx, regidx)
 
 mapping clause encdec = SFENCE_VMA(rs1, rs2)
   <-> 0b0001001 @ rs2 @ rs1 @ 0b000 @ 0b00000 @ 0b1110011
@@ -716,13 +716,13 @@ function clause execute SFENCE_VMA(rs1, rs2) = {
   let addr : option(xlenbits) = if rs1 == 0 then None() else Some(X(rs1));
   let asid : option(xlenbits) = if rs2 == 0 then None() else Some(X(rs2));
   match cur_privilege {
-    User       => { handle_illegal(); false },
+    User       => { handle_illegal(); RETIRE_FAIL },
     Supervisor => match (architecture(get_mstatus_SXL(mstatus)), mstatus.TVM()) {
-                    (Some(_), true)  => { handle_illegal(); false },
-                    (Some(_), false) => { flush_TLB(asid, addr); true },
+                    (Some(_), true)  => { handle_illegal(); RETIRE_FAIL },
+                    (Some(_), false) => { flush_TLB(asid, addr); RETIRE_SUCCESS },
                     (_, _)           => internal_error("unimplemented sfence architecture")
                   },
-    Machine    => { flush_TLB(asid, addr); true }
+    Machine    => { flush_TLB(asid, addr); RETIRE_SUCCESS }
   }
 }
 

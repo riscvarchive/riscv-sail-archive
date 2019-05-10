@@ -8,11 +8,11 @@ function extend_value(is_unsigned, value) = match (value) {
   MemException(e) => MemException(e)
 }
 
-val process_load : forall 'n, 0 < 'n <= xlen_bytes. (regbits, xlenbits, MemoryOpResult(bits(8 * 'n)), bool) -> bool effect {escape, rreg, wreg}
+val process_load : forall 'n, 0 < 'n <= xlen_bytes. (regidx, xlenbits, MemoryOpResult(bits(8 * 'n)), bool) -> Retired effect {escape, rreg, wreg}
 function process_load(rd, addr, value, is_unsigned) =
   match extend_value(is_unsigned, value) {
-    MemValue(result) => { X(rd) = result; true },
-    MemException(e)  => { handle_mem_exception(addr, e); false }
+    MemValue(result) => { X(rd) = result; RETIRE_SUCCESS },
+    MemException(e)  => { handle_mem_exception(addr, e); RETIRE_FAIL }
   }
 
 function check_misaligned(vaddr : xlenbits, width : word_width) -> bool =
@@ -29,9 +29,9 @@ function check_misaligned(vaddr : xlenbits, width : word_width) -> bool =
  * sequential model of SC a bit simpler, at the cost of an explicit
  * call to load_reservation in LR and cancel_reservation in SC.
  */
-val process_loadres : forall 'n, 0 < 'n <= xlen_bytes. (regbits, xlenbits, MemoryOpResult(bits(8 * 'n)), bool) -> bool effect {escape, rreg, wreg}
+val process_loadres : forall 'n, 0 < 'n <= xlen_bytes. (regidx, xlenbits, MemoryOpResult(bits(8 * 'n)), bool) -> Retired effect {escape, rreg, wreg}
 function process_loadres(rd, addr, value, is_unsigned) =
   match extend_value(is_unsigned, value) {
-    MemValue(result) => { load_reservation(addr); X(rd) = result; true },
-    MemException(e)  => { handle_mem_exception(addr, e); false }
+    MemValue(result) => { load_reservation(addr); X(rd) = result; RETIRE_SUCCESS },
+    MemException(e)  => { handle_mem_exception(addr, e); RETIRE_FAIL }
   }
