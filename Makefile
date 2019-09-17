@@ -33,6 +33,9 @@ SAIL_SYS_SRCS += riscv_next_control.sail    # helpers for the 'N' extension
 SAIL_SYS_SRCS += riscv_csr_ext.sail         # access to CSR extensions
 SAIL_SYS_SRCS += riscv_sys_control.sail     # general exception handling
 
+DBG_MODULE_SRCS = $(addprefix debug_module/,dm_regs.sail dm_control.sail riscv_debug_regs.sail)
+SAIL_SYS_SRCS += $(DBG_MODULE_SRCS)
+
 SAIL_RV32_VM_SRCS = riscv_vmem_sv32.sail riscv_vmem_rv32.sail
 SAIL_RV64_VM_SRCS = riscv_vmem_sv39.sail riscv_vmem_sv48.sail riscv_vmem_rv64.sail
 
