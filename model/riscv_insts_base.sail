@@ -559,15 +559,15 @@ mapping clause assembly = SHIFTIWOP(shamt, rs1, rd, op)
       if sizeof(xlen) == 64
 
 /* ****************************************************************** */
-union clause ast = FENCE : (bits(4), bits(4))
+union clause ast = FENCE : (bits(4), bits(4), bits(4), regidx, regidx)
 
-mapping clause encdec = FENCE(pred, succ)
-  <-> 0b0000 @ pred @ succ @ 0b00000 @ 0b000 @ 0b00000 @ 0b0001111
+mapping clause encdec = FENCE(fm, pred, succ, rs1, rd) if (fm != 0b1000  /* TSO is handled below */)
+  <-> fm : bits(4) @ pred @ succ @ rs1 : regidx @ 0b000 @ rd : regidx @ 0b0001111 if (fm != 0b1000)
 
 /* For future versions of Sail where barriers can be parameterised */
 $ifdef FEATURE_UNION_BARRIER
 
-function clause execute (FENCE(pred, succ)) = {
+function clause execute (FENCE(_, pred, succ, _, _)) = {
   match (pred, succ) {
     (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => __barrier(Barrier_RISCV_rw_rw()),
     (_ : bits(2) @ 0b10, _ : bits(2) @ 0b11) => __barrier(Barrier_RISCV_r_rw()),
@@ -635,18 +635,18 @@ mapping fence_bits : bits(4) <-> string = {
   i : bits(1) @ o : bits(1) @ r : bits(1) @ w : bits(1) <-> bit_maybe_i(i) ^ bit_maybe_o(o) ^ bit_maybe_r(r) ^ bit_maybe_w(w)
 }
 
-mapping clause assembly = FENCE(pred, succ)
+mapping clause assembly = FENCE(0b0000, pred, succ, 0b00000, 0b00000)
   <-> "fence" ^ spc() ^ fence_bits(pred) ^ sep() ^ fence_bits(succ)
 
 /* ****************************************************************** */
-union clause ast = FENCE_TSO : (bits(4), bits(4))
+union clause ast = FENCE_TSO : (bits(4), bits(4), regidx, regidx)
 
-mapping clause encdec = FENCE_TSO(pred, succ)
-  <-> 0b1000 @ pred @ succ @ 0b00000 @ 0b000 @ 0b00000 @ 0b0001111
+mapping clause encdec = FENCE_TSO(pred, succ, rs1, rd)
+  <-> 0b1000 @ pred @ succ @ rs1 : regidx @ 0b000 @ rd : regidx @ 0b0001111
 
 $ifdef FEATURE_UNION_BARRIER
 
-function clause execute (FENCE_TSO(pred, succ)) = {
+function clause execute (FENCE_TSO(pred, succ, _, _)) = {
   match (pred, succ) {
     (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => __barrier(Barrier_RISCV_tso()),
     (_ : bits(2) @ 0b00, _ : bits(2) @ 0b00) => (),
@@ -659,7 +659,7 @@ function clause execute (FENCE_TSO(pred, succ)) = {
 
 $else
 
-function clause execute (FENCE_TSO(pred, succ)) = {
+function clause execute (FENCE_TSO(pred, succ, _, _)) = {
   match (pred, succ) {
     (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => __barrier(Barrier_RISCV_tso),
     (_ : bits(2) @ 0b00, _ : bits(2) @ 0b00) => (),
@@ -672,7 +672,7 @@ function clause execute (FENCE_TSO(pred, succ)) = {
 
 $endif
 
-mapping clause assembly = FENCE_TSO(pred, succ)
+mapping clause assembly = FENCE_TSO(pred, succ, 0b00000, 0b00000)
   <-> "fence.tso" ^ spc() ^ fence_bits(pred) ^ sep() ^ fence_bits(succ)
 
 /* ****************************************************************** */

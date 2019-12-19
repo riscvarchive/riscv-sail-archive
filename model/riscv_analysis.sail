@@ -112,7 +112,7 @@ function initial_analysis (instr:ast) -> (regfps,regfps,regfps,niafps,diafp,inst
              if (rs1 == 0b00000) then () else iR = RFull(GPRstr(rs1)) :: iR;
              if (rd == 0b00000) then () else oR = RFull(GPRstr(rd)) :: oR;
       },
-      FENCE(pred, succ) => {
+      FENCE(_, pred, succ, _, _) => {
              ik =
                match (pred, succ) {
                  (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => IK_barrier (Barrier_RISCV_rw_rw),
@@ -131,7 +131,7 @@ function initial_analysis (instr:ast) -> (regfps,regfps,regfps,niafps,diafp,inst
                  _ => internal_error("barrier type not implemented in initial_analysis")
                };
       },
-      FENCE_TSO(pred, succ) => {
+      FENCE_TSO(pred, succ, _, _) => {
              ik =
                match (pred, succ) {
                  (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => IK_barrier (Barrier_RISCV_tso),
@@ -285,7 +285,7 @@ function initial_analysis (instr:ast) -> (regfps,regfps,regfps,niafps,diafp,inst
              if (rs1 == 0b00000) then () else iR = RFull(GPRstr(rs1)) :: iR;
              if (rd == 0b00000) then () else oR = RFull(GPRstr(rd)) :: oR;
       },
-      FENCE(pred, succ) => {
+      FENCE(_, pred, succ, _, _) => {
              ik =
                match (pred, succ) {
 		 (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => IK_barrier (Barrier_RISCV_rw_rw ()),
@@ -303,7 +303,7 @@ function initial_analysis (instr:ast) -> (regfps,regfps,regfps,niafps,diafp,inst
                  _ => internal_error("barrier type not implemented in initial_analysis")
                };
       },
-      FENCE_TSO(pred, succ) => {
+      FENCE_TSO(pred, succ, _, _) => {
              ik =
                match (pred, succ) {
 		 (_ : bits(2) @ 0b11, _ : bits(2) @ 0b11) => IK_barrier (Barrier_RISCV_tso ()),
