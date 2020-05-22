@@ -98,17 +98,25 @@ overload to_str = {csr_name}
 
 /* Extensions may want to add additional CSR registers to the CSR address map.
  * These scattered functions support access to such registers.
- *
- * The default implementation provides access to the CSRs added by the 'N'
- * extension.
  */
 
-
-/* returns whether a CSR is defined and accessible at a given address
- * and privilege
+/* Returns whether a CSR is defined and accessible at a given address
+ * and privilege.
  */
 val ext_is_CSR_defined : (csreg, Privilege) -> bool effect {rreg}
 scattered function ext_is_CSR_defined
+
+/* Allows an extension to block access to csrno, at privilege level priv;
+ * it should return true if the access is allowed.
+ */
+val ext_check_CSR : (bits(12), Privilege, bool) -> bool
+function ext_check_CSR (csrno, p, isWrite) = true
+
+/* If ext_check_CSR returns false, this should cause an appropriate
+ * RISCV exception.
+ */
+val ext_check_CSR_fail : unit->unit
+function ext_check_CSR_fail () = ()
 
 /* returns the value of the CSR if it is defined */
 val ext_read_CSR : csreg -> option(xlenbits) effect {rreg}

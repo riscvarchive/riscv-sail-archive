@@ -1,3 +1,4 @@
+/* This closes the scattered function definitions of CSR extension hooks in riscv_csr_map. */
 
 mapping clause csr_name_map = reg <-> hex_bits_12(reg)
 end csr_name_map
