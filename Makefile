@@ -111,6 +111,9 @@ C_WARNINGS ?=
 C_INCS = $(addprefix c_emulator/,riscv_prelude.h riscv_platform_impl.h riscv_platform.h riscv_softfloat.h)
 C_SRCS = $(addprefix c_emulator/,riscv_prelude.c riscv_platform_impl.c riscv_platform.c riscv_softfloat.c riscv_sim.c)
 
+C2_INCS = $(addprefix c2_emulator/,riscv_prelude.h riscv_platform_impl.h riscv_platform.h riscv_softfloat.h)
+C2_SRCS = $(addprefix c2_emulator/,riscv_prelude.c riscv_platform_impl.c riscv_platform.c riscv_softfloat.c riscv_sim.c)
+
 # portability for MacPorts/MacOS
 C_SYS_INCLUDES = -I /opt/local/include
 C_SYS_LIBDIRS  = -L /opt/local/lib
@@ -123,6 +126,7 @@ SOFTFLOAT_LIBS   = $(SOFTFLOAT_LIBDIR)/softfloat.a
 SOFTFLOAT_SPECIALIZE_TYPE = RISCV
 
 C_FLAGS = $(C_SYS_INCLUDES) -I $(SAIL_LIB_DIR) -I c_emulator $(SOFTFLOAT_FLAGS) -fcommon
+C2_FLAGS = $(C_SYS_INCLUDES) -I $(SAIL_LIB_DIR) -I c2_emulator $(SOFTFLOAT_FLAGS) -fcommon
 C_LIBS  = $(C_SYS_LIBDIRS) -lgmp -lz $(SOFTFLOAT_LIBS)
 
 # The C simulator can be built to be linked against Spike for tandem-verification.
@@ -226,9 +230,9 @@ generated_definitions/c/riscv_model_$(ARCH).c: $(SAIL_SRCS) model/main.sail Make
 	mkdir -p generated_definitions/c
 	$(SAIL) $(SAIL_FLAGS) -O -Oconstant_fold -memo_z3 -c -c_include riscv_prelude.h -c_include riscv_platform.h -c_no_main $(SAIL_SRCS) model/main.sail -o $(basename $@)
 
-generated_definitions/c2/riscv_model_$(ARCH).c: $(SAIL_SRCS) model/main.sail Makefile
+generated_definitions/c2/riscv_model_$(ARCH).c: $(SAIL_SRCS) c2_emulator/config.json model/main.sail Makefile
 	mkdir -p generated_definitions/c2
-	$(SAIL) $(SAIL_FLAGS) -no_warn -memo_z3 -config c_emulator/config.json -c2 $(SAIL_SRCS) -o $(basename $@)
+	$(SAIL) $(SAIL_FLAGS) -c_preserve init_model -c_preserve tick_clock -c_preserve tick_platform -c_preserve step -no_warn -memo_z3 -config c2_emulator/config.json -c2 $(SAIL_SRCS) -o $(basename $@)
 
 $(SOFTFLOAT_LIBS):
 	$(MAKE) SPECIALIZE_TYPE=$(SOFTFLOAT_SPECIALIZE_TYPE) -C $(SOFTFLOAT_LIBDIR)
@@ -243,6 +247,9 @@ rvfi: c_emulator/riscv_rvfi_$(ARCH)
 
 c_emulator/riscv_sim_$(ARCH): generated_definitions/c/riscv_model_$(ARCH).c $(C_INCS) $(C_SRCS) $(SOFTFLOAT_LIBS) Makefile
 	gcc -g $(C_WARNINGS) $(C_FLAGS) $< $(C_SRCS) $(SAIL_LIB_DIR)/*.c $(C_LIBS) -o $@
+
+c2_emulator/riscv_sim_$(ARCH): generated_definitions/c2/riscv_model_$(ARCH).c $(C_INCS) $(C2_SRCS) $(SOFTFLOAT_LIBS) Makefile
+	gcc -g -DMODEL_H="\"riscv_model_$(ARCH).h\"" $(C_WARNINGS) $(C2_FLAGS) -I generated_definitions/c2 $< $(C2_SRCS) $(SAIL_LIB_DIR)/*.c $(C_LIBS) -o $@
 
 generated_definitions/c/riscv_rvfi_model_$(ARCH).c: $(SAIL_RVFI_SRCS) model/main.sail Makefile
 	mkdir -p generated_definitions/c

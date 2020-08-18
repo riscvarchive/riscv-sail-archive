@@ -1,0 +1,84 @@
+{
+    "codegen": {
+        // Apply some default name mangling rules if true. If false,
+        // mangle everything.
+        "default_exports": false,
+        // An array containing either ["identifier", "string"] or
+        // "identifier". For the first case the identifier will be
+        // rewritten into string in the generated C source. For the
+        // second the identifier will be preserved without name
+        // mangling.
+        "exports": [
+            "PC",
+            "misa",
+            ["_set_Misa_C", "set_misa_c"],
+            "xlen_val",
+            "float_result",
+            "float_fflags",
+            "htif_done",
+            "htif_exit_code",
+            "have_exception",
+            "tick_clock",
+            "tick_platform",
+            "step",
+            "init_model",
+            "initialize_registers"
+        ],
+        // Generic functions must always have name mangling applied
+        // due to specialization. They can be renamed using ["symbol",
+        // "string"] pairs in this array, where "symbol" is any
+        // mangled symbol that appears in the generated C.
+        "exports_mangled": [],
+        // Include the following extra headers in the generated
+        // C. Should be specified as either "<header.h>" or "header.h"
+        "extra_headers": [
+            "riscv_prelude.h",
+            "riscv_platform.h"
+        ],
+        // An array of extra string lines that are added to the
+        // sail_state struct.
+        "extra_state": [],
+        // The sail_state struct will be passed to the following array
+        // of primops, which are specified via the "foo" string from
+        // val id = "foo" : ... in Sail.
+        "state_primops": [
+            "match_reservation",
+            "softfloat_f32add",
+            "softfloat_f32sub",
+            "softfloat_f32mul",
+            "softfloat_f32div",
+            "softfloat_f64add",
+            "softfloat_f64sub",
+            "softfloat_f64mul",
+            "softfloat_f64div",
+            "softfloat_f32muladd",
+            "softfloat_f64muladd",
+            "softfloat_f32sqrt",
+            "softfloat_f64sqrt",
+            "softfloat_f32toi32",
+            "softfloat_f32toui32",
+            "softfloat_f32toi64",
+            "softfloat_f32toui64",
+            "softfloat_f64toi32",
+            "softfloat_f64toui32",
+            "softfloat_f64toi64",
+            "softfloat_f64toui64",
+            "softfloat_i32tof32",
+            "softfloat_ui32tof32",
+            "softfloat_i64tof32",
+            "softfloat_ui64tof32",
+            "softfloat_i32tof64",
+            "softfloat_ui32tof64",
+            "softfloat_i64tof64",
+            "softfloat_ui64tof64",
+            "softfloat_f32tof64",
+            "softfloat_f64tof32",
+            "softfloat_f32lt",
+            "softfloat_f32le",
+            "softfloat_f32eq",
+            "softfloat_f64lt",
+            "softfloat_f64le",
+            "softfloat_f64eq"
+        ]
+    }
+}
