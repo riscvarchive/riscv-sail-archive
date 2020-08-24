@@ -37,12 +37,17 @@
         ],
         // An array of extra string lines that are added to the
         // sail_state struct.
-        "extra_state": [],
+        "extra_state": [
+            "uint64_t reservation",
+            "bool reservation_valid"
+        ],
         // The sail_state struct will be passed to the following array
         // of primops, which are specified via the "foo" string from
         // val id = "foo" : ... in Sail.
         "state_primops": [
             "match_reservation",
+            "load_reservation",
+            "cancel_reservation",
             "softfloat_f32add",
             "softfloat_f32sub",
             "softfloat_f32mul",
@@ -79,6 +84,7 @@
             "softfloat_f64lt",
             "softfloat_f64le",
             "softfloat_f64eq"
-        ]
+        ],
+        "external_state_api": []
     }
 }

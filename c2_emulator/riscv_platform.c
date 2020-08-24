@@ -7,9 +7,6 @@
 
 /* This file contains the definitions of the C externs of Sail model. */
 
-static mach_bits reservation = 0;
-static bool reservation_valid = false;
-
 bool sys_enable_rvc(unit u)
 { return rv_enable_rvc; }
 
@@ -49,10 +46,10 @@ mach_bits plat_clint_base(unit u)
 mach_bits plat_clint_size(unit u)
 { return rv_clint_size; }
 
-unit load_reservation(mach_bits addr)
+unit load_reservation(sail_state *state, mach_bits addr)
 {
-  reservation = addr;
-  reservation_valid = true;
+  state->reservation = addr;
+  state->reservation_valid = true;
   /* fprintf(stderr, "reservation <- %0" PRIx64 "\n", reservation); */
   return UNIT;
 }
@@ -68,7 +65,7 @@ static mach_bits check_mask(sail_state *state)
 bool match_reservation(sail_state *state, mach_bits addr)
 {
   mach_bits mask = check_mask(state);
-  bool ret = reservation_valid && (reservation & mask) == (addr & mask);
+  bool ret = state->reservation_valid && (state->reservation & mask) == (addr & mask);
   /*
   fprintf(stderr, "reservation(%c): %0" PRIx64 ", key=%0" PRIx64 ": %s\n",
 	  reservation_valid ? 'v' : 'i', reservation, addr, ret ? "ok" : "fail");
@@ -77,9 +74,9 @@ bool match_reservation(sail_state *state, mach_bits addr)
   return ret;
 }
 
-unit cancel_reservation(unit u)
+unit cancel_reservation(sail_state *state, unit u)
 { /* fprintf(stderr, "reservation <- none\n"); */
-  reservation_valid = false;
+  state->reservation_valid = false;
   return UNIT;
 }
 

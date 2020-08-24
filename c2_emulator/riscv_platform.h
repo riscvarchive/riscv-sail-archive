@@ -22,9 +22,9 @@ mach_bits plat_clint_base(unit);
 mach_bits plat_clint_size(unit);
 
 bool speculate_conditional(unit);
-unit load_reservation(mach_bits);
-bool match_reservation(sail_state *, uint64_t);
-unit cancel_reservation(unit);
+unit load_reservation(sail_state *, mach_bits);
+bool match_reservation(sail_state *, mach_bits);
+unit cancel_reservation(sail_state *, unit);
 
 void plat_insns_per_tick(sail_int *rop, unit);
 
